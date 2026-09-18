@@ -1,0 +1,9 @@
+import type { Meta, StoryObj } from '@storybook/angular';
+import { moduleMetadata } from '@storybook/angular';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
+import { fn } from 'storybook/test';
+type MenuArgs = { onAction: (action: string) => void };
+const meta: Meta<MenuArgs> = { title: 'Material/Menu', tags: ['autodocs'], decorators: [moduleMetadata({ imports: [MatMenuModule, MatButtonModule, MatIconModule] })], parameters: { layout: 'padded' }, args: { onAction: fn() }, argTypes: { onAction: { control: false } }, render: (args) => ({ props: args, template: `<button matButton="outlined" type="button" [matMenuTriggerFor]="menu" aria-label="Open document actions">Document actions <mat-icon>arrow_drop_down</mat-icon></button><mat-menu #menu="matMenu"><button mat-menu-item type="button" (click)="onAction('Edit')"><mat-icon>edit</mat-icon><span>Edit</span></button><button mat-menu-item type="button" (click)="onAction('Duplicate')"><mat-icon>content_copy</mat-icon><span>Duplicate</span></button><button mat-menu-item type="button" disabled><mat-icon>delete</mat-icon><span>Delete</span></button></mat-menu>` }) };
+export default meta; type Story = StoryObj<MenuArgs>; export const Basic: Story = {}; export const Nested: Story = { render: (args) => ({ props: args, template: `<button matButton="outlined" type="button" [matMenuTriggerFor]="mainMenu">More options</button><mat-menu #mainMenu="matMenu"><button mat-menu-item [matMenuTriggerFor]="shareMenu">Share</button><button mat-menu-item type="button" (click)="onAction('Rename')">Rename</button></mat-menu><mat-menu #shareMenu="matMenu"><button mat-menu-item type="button" (click)="onAction('Copy link')">Copy link</button><button mat-menu-item type="button" (click)="onAction('Invite collaborators')">Invite collaborators</button></mat-menu>` }) };
