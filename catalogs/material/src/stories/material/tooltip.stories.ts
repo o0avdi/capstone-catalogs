@@ -2,7 +2,10 @@ import type { Meta, StoryObj } from '@storybook/angular';
 import { moduleMetadata } from '@storybook/angular';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import type { TooltipPosition } from '@angular/material/tooltip';
+import type {
+  TooltipPosition,
+  TooltipTouchGestures,
+} from '@angular/material/tooltip';
 
 type TooltipArgs = {
   label: string;
@@ -11,6 +14,7 @@ type TooltipArgs = {
   disabled: boolean;
   showDelay: number;
   hideDelay: number;
+  touchGestures: TooltipTouchGestures;
 };
 
 const meta: Meta<TooltipArgs> = {
@@ -50,6 +54,11 @@ const meta: Meta<TooltipArgs> = {
       control: { type: 'number', min: 0, step: 100 },
       description: 'Delay before hiding the tooltip, in milliseconds.',
     },
+    touchGestures: {
+      control: 'radio',
+      options: ['auto', 'on', 'off'],
+      description: 'Controls how touch gestures activate the tooltip.',
+    },
   },
   args: {
     label: 'Export report',
@@ -58,11 +67,12 @@ const meta: Meta<TooltipArgs> = {
     disabled: false,
     showDelay: 0,
     hideDelay: 0,
+    touchGestures: 'auto',
   },
   render: (args) => ({
     props: args,
     template: `
-      <div style="padding: 64px;">
+      <div style="padding: 96px;">
         <button
           type="button"
           matButton="outlined"
@@ -71,6 +81,7 @@ const meta: Meta<TooltipArgs> = {
           [matTooltipDisabled]="disabled"
           [matTooltipShowDelay]="showDelay"
           [matTooltipHideDelay]="hideDelay"
+          [matTooltipTouchGestures]="touchGestures"
         >
           {{ label }}
         </button>
@@ -90,10 +101,66 @@ export const Above: Story = {
   },
 };
 
+export const Left: Story = {
+  args: {
+    position: 'left',
+  },
+};
+
+export const Right: Story = {
+  args: {
+    position: 'right',
+  },
+};
+
+export const Before: Story = {
+  args: {
+    position: 'before',
+    message: 'Appears before the trigger based on text direction',
+  },
+};
+
+export const After: Story = {
+  args: {
+    position: 'after',
+    message: 'Appears after the trigger based on text direction',
+  },
+};
+
 export const Delayed: Story = {
   args: {
     showDelay: 700,
     hideDelay: 300,
+    message: 'This tooltip waits before appearing',
+  },
+};
+
+export const LongMessage: Story = {
+  args: {
+    label: 'View requirements',
+    message:
+      'You need administrator permission before you can change this workspace setting.',
+    position: 'above',
+  },
+};
+
+export const EmptyMessage: Story = {
+  args: {
+    message: '',
+    label: 'No tooltip message',
+  },
+};
+
+export const TouchEnabled: Story = {
+  args: {
+    label: 'Press and hold',
+    message: 'Touch gestures are enabled for this tooltip',
+    touchGestures: 'on',
+  },
+  parameters: {
+    viewport: {
+      defaultViewport: 'mobile1',
+    },
   },
 };
 
