@@ -1,0 +1,8 @@
+import type { Meta, StoryObj } from '@storybook/angular';
+import { moduleMetadata } from '@storybook/angular';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+type FormFieldArgs = { label: string; value: string; hint: string; required: boolean; disabled: boolean };
+const meta: Meta<FormFieldArgs> = { title: 'Material/Form Field', tags: ['autodocs'], decorators: [moduleMetadata({ imports: [MatFormFieldModule, MatInputModule, MatIconModule] })], parameters: { layout: 'padded' }, args: { label: 'Email address', value: '', hint: 'We will only use this for account updates.', required: false, disabled: false }, argTypes: { label: { control: 'text' }, value: { control: 'text' }, hint: { control: 'text' }, required: { control: 'boolean' }, disabled: { control: 'boolean' } }, render: (args) => ({ props: args, template: `<mat-form-field appearance="outline" style="width:360px;max-width:100%"><mat-label>{{ label }}</mat-label><input matInput type="email" [value]="value" [required]="required" [disabled]="disabled"><mat-icon matIconPrefix>mail</mat-icon><mat-hint>{{ hint }}</mat-hint></mat-form-field>` }) };
+export default meta; type Story = StoryObj<FormFieldArgs>; export const Basic: Story = {}; export const Required: Story = { args: { required: true } }; export const Disabled: Story = { args: { value: 'alex@example.com', disabled: true } }; export const WithError: Story = { render: () => ({ template: `<mat-form-field appearance="outline" style="width:360px"><mat-label>Email address</mat-label><input matInput value="not-an-email" required><mat-error>Enter a valid email address</mat-error></mat-form-field>` }) };
