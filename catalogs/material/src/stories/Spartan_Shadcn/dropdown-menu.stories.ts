@@ -1,0 +1,259 @@
+import { Component } from '@angular/core';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import * as lucide from '@ng-icons/lucide';
+
+import { HlmButton, HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmDropdownMenu, HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
+
+import { argsToTemplate, type Meta, moduleMetadata, type StoryObj } from '@storybook/angular';
+
+const meta: Meta<HlmDropdownMenu> = {
+	title: 'Spartan/Dropdown Menu',
+	component: HlmDropdownMenu,
+	tags: ['autodocs'],
+	args: {
+		sideOffset: '1',
+	},
+	argTypes: {
+		sideOffset: {
+			options: ['1', '1.5', '2'],
+			control: {
+				type: 'select',
+			},
+		},
+	},
+	decorators: [
+		moduleMetadata({
+			providers: [provideIcons(lucide)],
+			imports: [HlmDropdownMenuImports, HlmButton, NgIcon],
+		}),
+	],
+};
+
+export default meta;
+type Story = StoryObj<HlmDropdownMenu>;
+
+export const Default: Story = {
+	render: ({ ...args }) => ({
+		props: args,
+		template: `
+    <div class='w-full flex justify-center items-center'>
+      <button hlmBtn variant='outline' align='end' [hlmDropdownMenuTrigger]='menu'>Open</button>
+    </div>
+    <ng-template #menu>
+      <hlm-dropdown-menu ${argsToTemplate(args)} class='w-56'>
+        <hlm-dropdown-menu-label>My Account</hlm-dropdown-menu-label>
+        <hlm-dropdown-menu-separator />
+        <hlm-dropdown-menu-group>
+          <button hlmDropdownMenuItem>
+            <ng-icon name='lucideUser' />
+            <span>Profile</span>
+            <hlm-dropdown-menu-shortcut>⇧⌘P</hlm-dropdown-menu-shortcut>
+          </button>
+
+          <button hlmDropdownMenuItem>
+            <ng-icon name='lucideCreditCard' />
+            <span>Billing</span>
+            <hlm-dropdown-menu-shortcut>⌘B</hlm-dropdown-menu-shortcut>
+          </button>
+
+          <button hlmDropdownMenuItem>
+            <ng-icon name='lucideSettings' />
+            <span>Settings</span>
+            <hlm-dropdown-menu-shortcut>⌘S</hlm-dropdown-menu-shortcut>
+          </button>
+
+          <button hlmDropdownMenuItem>
+            <ng-icon name='lucideKeyboard' />
+            <span>Keyboard Shortcuts</span>
+            <hlm-dropdown-menu-shortcut>⌘K</hlm-dropdown-menu-shortcut>
+          </button>
+        </hlm-dropdown-menu-group>
+
+        <hlm-dropdown-menu-separator />
+
+        <hlm-dropdown-menu-group>
+          <button hlmDropdownMenuItem>
+            <ng-icon name='lucideUsers' />
+            <span>Team</span>
+            <hlm-dropdown-menu-shortcut>⌘B</hlm-dropdown-menu-shortcut>
+          </button>
+
+          <button hlmDropdownMenuItem [hlmDropdownMenuSubTrigger]='invite' side="right" align="start">
+            <ng-icon name='lucideUserPlus' />
+            <span>Invite Users</span>
+            <hlm-dropdown-menu-item-sub-indicator />
+          </button>
+
+          <button hlmDropdownMenuItem>
+            <ng-icon name='lucidePlus' />
+            <span>New Team</span>
+            <hlm-dropdown-menu-shortcut>⌘+T</hlm-dropdown-menu-shortcut>
+          </button>
+        </hlm-dropdown-menu-group>
+
+        <hlm-dropdown-menu-separator />
+
+        <hlm-dropdown-menu-group>
+          <button hlmDropdownMenuItem [disabled]='false'>
+            <ng-icon name='lucideGithub' />
+            <span>Github</span>
+          </button>
+
+          <button hlmDropdownMenuItem [disabled]='true'>
+            <ng-icon name='lucideLifeBuoy' />
+            <span>Support</span>
+          </button>
+
+          <button hlmDropdownMenuItem disabled>
+            <ng-icon name='lucideCloud' />
+            <span>API</span>
+          </button>
+        </hlm-dropdown-menu-group>
+
+        <hlm-dropdown-menu-separator />
+
+        <button hlmDropdownMenuItem>
+          <ng-icon name='lucideLogOut' />
+          <span>Logout</span>
+          <hlm-dropdown-menu-shortcut>⇧⌘Q</hlm-dropdown-menu-shortcut>
+        </button>
+
+      </hlm-dropdown-menu>
+    </ng-template>
+
+    <ng-template #invite>
+      <hlm-dropdown-menu-sub>
+        <button hlmDropdownMenuItem>
+          <ng-icon name='lucideMail' />
+          Email
+        </button>
+
+        <button hlmDropdownMenuItem>
+          <ng-icon name='lucideMessageSquare' />
+          Message
+        </button>
+        <hlm-dropdown-menu-separator />
+        <button hlmDropdownMenuItem>
+          <ng-icon name='lucideCirclePlus' />
+          <span>More</span>
+        </button>
+      </hlm-dropdown-menu-sub>
+    </ng-template>
+    `,
+	}),
+};
+
+@Component({
+	selector: 'stateful-dropdown-story',
+	imports: [HlmDropdownMenuImports, HlmButtonImports],
+	template: `
+		<div class="flex w-full items-center justify-center pt-[20%]">
+			<button hlmBtn variant="outline" align="center" [hlmDropdownMenuTrigger]="menu">Open</button>
+		</div>
+		<ng-template #menu>
+			<hlm-dropdown-menu class="w-56">
+				<hlm-dropdown-menu-group>
+					<hlm-dropdown-menu-label>Appearance</hlm-dropdown-menu-label>
+
+					<button hlmDropdownMenuCheckbox [checked]="isPanel" (triggered)="isPanel = !isPanel">
+						<hlm-dropdown-menu-checkbox-indicator />
+						<span>Panel</span>
+					</button>
+
+					<button
+						hlmDropdownMenuCheckbox
+						disabled
+						[checked]="isActivityBar"
+						(triggered)="isActivityBar = !isActivityBar"
+					>
+						<hlm-dropdown-menu-checkbox-indicator />
+						<span>Activity Bar</span>
+					</button>
+
+					<button hlmDropdownMenuCheckbox [checked]="isStatusBar" (triggered)="isStatusBar = !isStatusBar">
+						<hlm-dropdown-menu-checkbox-indicator />
+						<span>Status Bar</span>
+					</button>
+				</hlm-dropdown-menu-group>
+
+				<hlm-dropdown-menu-separator />
+
+				<hlm-dropdown-menu-label>Panel Position</hlm-dropdown-menu-label>
+
+				<hlm-dropdown-menu-group>
+					@for (size of panelPositions; track size) {
+						<button hlmDropdownMenuRadio [checked]="size === selectedPosition" (triggered)="selectedPosition = size">
+							<hlm-dropdown-menu-radio-indicator />
+							<span>{{ size }}</span>
+						</button>
+					}
+				</hlm-dropdown-menu-group>
+
+				<hlm-dropdown-menu-separator />
+
+				<button hlmDropdownMenuItem (triggered)="reset()">
+					<ng-icon name="lucideUndo2" />
+					Reset
+				</button>
+			</hlm-dropdown-menu>
+		</ng-template>
+	`,
+})
+class StatefulStory {
+	isStatusBar = false;
+	isPanel = false;
+	isActivityBar = false;
+
+	panelPositions = ['Top', 'Bottom', 'Right', 'Left'] as const;
+	selectedPosition: (typeof this.panelPositions)[number] | undefined = 'Bottom';
+
+	reset() {
+		this.isStatusBar = false;
+		this.isPanel = false;
+		this.isActivityBar = false;
+		this.selectedPosition = 'Bottom';
+	}
+}
+
+export const Stateful: Story = {
+	render: () => ({
+		moduleMetadata: {
+			imports: [StatefulStory],
+		},
+		template: '<stateful-dropdown-story/>',
+	}),
+};
+
+// Minimal, deterministic submenu layout used by the issue #1333 regression e2e: a sub-trigger with a
+// plain sibling item directly below it, so a test can hover/click the sub-trigger and then move to the
+// sibling to assert the parent dropdown stays open.
+export const Submenu: Story = {
+	render: () => ({
+		moduleMetadata: {
+			imports: [HlmDropdownMenuImports, HlmButton, NgIcon],
+			providers: [provideIcons(lucide)],
+		},
+		template: `
+    <div class='flex w-full justify-center pt-[20%]'>
+      <button hlmBtn variant='outline' [hlmDropdownMenuTrigger]='menu'>Open</button>
+    </div>
+    <ng-template #menu>
+      <hlm-dropdown-menu class='w-56'>
+        <button hlmDropdownMenuItem>Top Item</button>
+        <button hlmDropdownMenuItem [hlmDropdownMenuSubTrigger]='sub' side='right' align='start'>
+          <span>Submenu Trigger</span>
+          <hlm-dropdown-menu-item-sub-indicator />
+        </button>
+        <button hlmDropdownMenuItem>Bottom Item</button>
+      </hlm-dropdown-menu>
+    </ng-template>
+    <ng-template #sub>
+      <hlm-dropdown-menu-sub>
+        <button hlmDropdownMenuItem>Sub Item One</button>
+        <button hlmDropdownMenuItem>Sub Item Two</button>
+      </hlm-dropdown-menu-sub>
+    </ng-template>
+    `,
+	}),
+};
