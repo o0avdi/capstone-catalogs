@@ -1,3 +1,55 @@
-import type { Meta, StoryObj } from '@storybook/angular'; import { MetricCardComponent, MetricState } from '../../app/finance/components/metric-card.component';
-interface MetricArgs { label:string; value:string; change?:string; helper?:string; state:MetricState; }
-const meta:Meta<MetricArgs>={title:'Finance/Metric Card',component:MetricCardComponent,tags:['autodocs'],parameters:{layout:'padded'},args:{label:'Revenue',value:'$1.24M',change:'+8.4%',helper:'vs. prior period',state:'positive'}}; export default meta; type Story=StoryObj<MetricArgs>; export const Revenue:Story={}; export const OperatingProfit:Story={args:{label:'Operating profit',value:'$286K',change:'+3.2%',helper:'23% margin',state:'positive'}}; export const NegativeChange:Story={args:{label:'Cash balance',value:'$860K',change:'-1.1%',helper:'vs. last month',state:'negative'}}; export const Neutral:Story={args:{label:'Runway',value:'18 months',change:'On plan',helper:'based on current spend',state:'neutral'}};
+import type { Meta, StoryObj } from '@storybook/angular';
+import {
+  MetricCardComponent,
+  MetricState,
+} from '../../app/finance/components/metric-card.component';
+interface MetricArgs {
+  label: string;
+  value: string;
+  change?: string;
+  helper?: string;
+  state: MetricState;
+}
+const meta: Meta<MetricArgs> = {
+  title: 'Finance/Metric Card',
+  component: MetricCardComponent,
+  tags: ['autodocs'],
+  parameters: { layout: 'padded' },
+  args: {
+    label: 'Revenue',
+    value: '$1.24M',
+    change: '+8.4%',
+    helper: 'vs. prior period',
+    state: 'positive',
+  },
+};
+export default meta;
+type Story = StoryObj<MetricArgs>;
+export const Revenue: Story = {};
+export const OperatingProfit: Story = {
+  args: {
+    label: 'Operating profit',
+    value: '$286K',
+    change: '+3.2%',
+    helper: '23% margin',
+    state: 'positive',
+  },
+};
+export const NegativeChange: Story = {
+  args: {
+    label: 'Cash balance',
+    value: '$860K',
+    change: '-1.1%',
+    helper: 'vs. last month',
+    state: 'negative',
+  },
+};
+export const Neutral: Story = {
+  args: {
+    label: 'Runway',
+    value: '18 months',
+    change: 'On plan',
+    helper: 'based on current spend',
+    state: 'neutral',
+  },
+};
