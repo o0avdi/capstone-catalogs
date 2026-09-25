@@ -1,0 +1,32 @@
+import type { Meta, StoryObj } from '@storybook/angular';
+import { RiskReturnChartComponent } from '../../app/finance/components/risk-return-chart.component';
+import { RiskReturnPoint } from '../../app/finance/finance.types';
+interface Args {
+  data: RiskReturnPoint[];
+}
+const diversified: RiskReturnPoint[] = [
+  { asset: 'Equities', return: 9.2, volatility: 16, allocation: 48 },
+  { asset: 'Bonds', return: 4.1, volatility: 6, allocation: 27 },
+  { asset: 'Alternatives', return: 7.3, volatility: 12, allocation: 15 },
+  { asset: 'Cash', return: 3.2, volatility: 1, allocation: 10 },
+];
+const meta: Meta<Args> = {
+  title: 'Finance/Components/Risk vs Return',
+  component: RiskReturnChartComponent,
+  tags: ['autodocs'],
+  parameters: { layout: 'padded' },
+  args: { data: diversified },
+};
+export default meta;
+type Story = StoryObj<Args>;
+export const DiversifiedPortfolio: Story = {};
+export const HigherRiskPortfolio: Story = {
+  args: {
+    data: [
+      { asset: 'Growth equities', return: 13, volatility: 25, allocation: 55 },
+      { asset: 'Small cap', return: 11, volatility: 29, allocation: 25 },
+      { asset: 'Bonds', return: 4, volatility: 6, allocation: 15 },
+      { asset: 'Cash', return: 3, volatility: 1, allocation: 5 },
+    ],
+  },
+};

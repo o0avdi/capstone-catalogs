@@ -1,0 +1,21 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Finance/Overview" />
+
+# Finance catalog
+
+A reusable financial analytics catalog built with **Angular**, **Angular Material** and **Vega-Lite**. All financial data is illustrative.
+
+## Three levels of composition
+
+1. **Foundations / Panel** — a team-owned wrapper around Material Card. Existing library primitives remain in the Material section.
+2. **Components** — financial KPI cards, performance charts, searchable transaction tables and financial summaries.
+3. **Templates / Executive Dashboard** — one typed, configurable composition using those components.
+
+Start with **Templates → Executive Dashboard → Default Financial Overview**. Switch the reporting period, sort transactions, and filter by status. Then compare **Strong Growth Scenario** and **Expense Pressure Scenario**.
+
+## Where the components come from
+
+The team writes the finance-specific contracts, formatting, compositions and demo fixtures. Angular Material supplies cards and theme tokens. Vega-Lite defines chart specifications; vega-embed and Vega render them. The transaction table uses semantic HTML.
+
+This work prepares clear component contracts for future A2UI mapping. No exporter, Composer registration or A2UI transformation is implemented here.

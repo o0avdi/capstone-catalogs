@@ -1,0 +1,107 @@
+<main [attr.aria-label]="config.title" [attr.aria-busy]="loading">
+  <header class="dashboard-header">
+    <div>
+      <p class="eyebrow">
+        <span class="brand" aria-hidden="true">F</span> FINANCE / EXECUTIVE INSIGHTS
+      </p>
+      <h1>{{ config.title }}</h1>
+      @if (config.subtitle) {
+        <p class="subtitle">{{ config.subtitle }}</p>
+      }
+    </div>
+    @if (config.periods.length) {
+      <label class="period-picker"
+        >Reporting period<select
+          [value]="selectedPeriodId"
+          (change)="selectPeriod($any($event.target).value)"
+          [disabled]="loading || !!error"
+        >
+          @for (item of config.periods; track item.id) {
+            <option [value]="item.id">{{ item.label }}</option>
+          }
+        </select></label
+      >
+    }
+  </header>
+  @if (error) {
+    <section class="state error" role="alert">
+      <span class="state-icon" aria-hidden="true">!</span>
+      <h2>Unable to load financial overview</h2>
+      <p>{{ error }}</p>
+    </section>
+  } @else if (loading) {
+    <section class="loading" role="status">
+      <p>Loading financial overview…</p>
+      <div class="metrics">
+        @for (item of [1, 2, 3, 4]; track item) {
+          <div class="skeleton"></div>
+        }
+      </div>
+      <div class="skeleton chart-skeleton"></div>
+    </section>
+  } @else if (period; as active) {
+    <div class="section-heading">
+      <h2>Performance overview</h2>
+      <span aria-live="polite">{{ active.label }}</span>
+    </div>
+    @if (active.metrics.length) {
+      <section class="metrics" aria-label="Key financial indicators">
+        @for (metric of active.metrics; track $index) {
+          <finance-metric-card
+            [label]="metric.label"
+            [value]="metric.value"
+            [format]="metric.format ?? 'currency'"
+            [currency]="currency"
+            [locale]="locale"
+            [subtitle]="metric.subtitle"
+            [change]="metric.change"
+            [changeFormat]="metric.changeFormat ?? 'percent'"
+            [helper]="metric.helper ?? active.comparisonLabel"
+            [state]="metric.state ?? 'neutral'"
+            [icon]="metric.icon"
+          />
+        }
+      </section>
+    } @else {
+      <p class="inline-empty">No key metrics for this period.</p>
+    }
+    <section class="performance">
+      <finance-panel
+        title="Financial performance"
+        [subtitle]="'Revenue and expenses · ' + active.label + ' · ' + currency"
+      >
+        <finance-price-trend-chart
+          [data]="active.chartData"
+          title="Revenue and expenses over time"
+          [showTitle]="false"
+          seriesLabel="Revenue"
+          comparisonLabel="Expenses"
+          [currency]="currency"
+          [locale]="locale"
+          [zeroBaseline]="true"
+        />
+      </finance-panel>
+      <finance-financial-summary [data]="active.summary" [currency]="currency" [locale]="locale" />
+    </section>
+    <finance-panel
+      title="Transaction activity"
+      subtitle="Selected ledger entries · inflows and outflows"
+    >
+      <finance-transaction-table
+        [transactions]="active.transactions"
+        [currency]="currency"
+        [locale]="locale"
+      />
+    </finance-panel>
+  } @else {
+    <section class="state" role="status">
+      <span class="state-icon" aria-hidden="true">—</span>
+      <h2>No financial data available</h2>
+      <p>Add a reporting period to display your financial overview.</p>
+    </section>
+  }
+  <footer>
+    <span>{{ config.sourceNote }}</span
+    ><span>{{ currency }} · {{ period?.label ?? 'No reporting period' }}</span>
+  </footer>
+</main>

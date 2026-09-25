@@ -1,0 +1,128 @@
+:host {
+  display: block;
+  min-width: 0;
+  font: 13px/1.5 system-ui;
+  color: var(--mat-sys-on-surface, #172b42);
+}
+.toolbar {
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  align-items: end;
+  flex-wrap: wrap;
+}
+label {
+  display: grid;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 500;
+  flex: 1;
+  min-width: 160px;
+}
+label:last-child {
+  flex: 0 1 170px;
+}
+input,
+select {
+  font: 13px system-ui;
+  padding: 11px 12px;
+  border: 1px solid var(--mat-sys-outline-variant, #cbd5e1);
+  border-radius: 8px;
+  background: var(--mat-sys-surface-container-lowest, #fff);
+  color: inherit;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 42px;
+}
+:focus-visible {
+  outline: 2px solid var(--mat-sys-primary, #005cbb);
+  outline-offset: 3px;
+}
+.count {
+  font-size: 11px;
+  color: var(--mat-sys-on-surface-variant, #526173);
+  margin: 18px 0 8px;
+}
+.scroll {
+  overflow: auto;
+}
+table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 620px;
+}
+th {
+  text-align: left;
+  background: var(--mat-sys-surface-container-low, #f4f6fa);
+  white-space: nowrap;
+}
+th button {
+  background: none;
+  border: 0;
+  color: inherit;
+  font: 600 11px system-ui;
+  cursor: pointer;
+  padding: 13px 12px;
+  width: 100%;
+  text-align: left;
+}
+td {
+  padding: 15px 12px;
+  border-bottom: 1px solid var(--mat-sys-outline-variant, #e2e8f0);
+  font-size: 12px;
+}
+.date {
+  white-space: nowrap;
+  color: var(--mat-sys-on-surface-variant, #526173);
+}
+.description {
+  min-width: 150px;
+  max-width: 270px;
+  overflow-wrap: anywhere;
+  font-weight: 500;
+}
+.amount {
+  white-space: nowrap;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.inflow {
+  color: #126448;
+}
+th:nth-child(4) button {
+  text-align: right;
+}
+.status {
+  display: inline-block;
+  padding: 4px 9px;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 6px;
+  text-transform: capitalize;
+}
+.completed {
+  background: #e6f4ed;
+  color: #126448;
+}
+.pending {
+  background: #fff3d8;
+  color: #815408;
+}
+.failed {
+  background: #fff0ed;
+  color: #a33228;
+}
+.empty {
+  text-align: center;
+  padding: 46px 16px;
+  color: var(--mat-sys-on-surface-variant, #526173);
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}

@@ -1,0 +1,57 @@
+import { Component, Input } from '@angular/core';
+import { VisualizationSpec } from 'vega-embed';
+import { OhlcPoint } from '../finance.types';
+import { VegaChartComponent } from '../shared/vega-chart.component';
+@Component({
+  selector: 'finance-candlestick-chart',
+  standalone: true,
+  imports: [VegaChartComponent],
+  template:
+    '<finance-vega-chart [spec]="chartSpec" ariaLabel="Candlestick price chart"></finance-vega-chart>',
+})
+export class CandlestickChartComponent {
+  @Input({ required: true }) data: OhlcPoint[] = [];
+  get chartSpec(): VisualizationSpec {
+    return {
+      $schema: 'https://vega.github.io/schema/vega-lite/v6.json',
+      width: 'container',
+      height: 300,
+      data: { values: this.data },
+      transform: [
+        { calculate: 'datum.close >= datum.open ? "Rising" : "Falling"', as: 'direction' },
+      ],
+      layer: [
+        {
+          mark: { type: 'rule', color: '#64748b' },
+          encoding: {
+            x: { field: 'date', type: 'temporal', title: null },
+            y: { field: 'low', type: 'quantitative', scale: { zero: false }, title: 'Price' },
+            y2: { field: 'high' },
+          },
+        },
+        {
+          mark: { type: 'bar', size: 14 },
+          encoding: {
+            x: { field: 'date', type: 'temporal', title: null },
+            y: { field: 'open', type: 'quantitative', scale: { zero: false } },
+            y2: { field: 'close' },
+            color: {
+              field: 'direction',
+              type: 'nominal',
+              scale: { domain: ['Rising', 'Falling'], range: ['#16a34a', '#dc2626'] },
+              legend: null,
+            },
+            tooltip: [
+              { field: 'date', type: 'temporal', title: 'Date' },
+              { field: 'open', type: 'quantitative', format: '$,.2f' },
+              { field: 'high', type: 'quantitative', format: '$,.2f' },
+              { field: 'low', type: 'quantitative', format: '$,.2f' },
+              { field: 'close', type: 'quantitative', format: '$,.2f' },
+            ],
+          },
+        },
+      ],
+      config: { view: { stroke: null } },
+    };
+  }
+}
