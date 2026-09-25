@@ -1,0 +1,40 @@
+:host {
+  display: block;
+  width: 100%;
+  max-width: 900px;
+  --lab-divider: #d9dde3;
+  --lab-muted: #535b66;
+  --lab-ok-bg: #e7f3e9;
+  --lab-ok-text: #20582b;
+  --lab-flag-bg: #fff0db;
+  --lab-flag-text: #754300;
+  --lab-pending-bg: #edf0f4;
+  --lab-pending-text: #424b57;
+}
+.report { width: 100%; }
+h2 { margin: 0; font-size: 1.25rem; line-height: 1.4; font-weight: 600; }
+h3 { margin: 0; font-size: 1rem; line-height: 1.5; font-weight: 600; }
+.metadata { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 24px; margin: 24px 0; }
+.metadata div { min-width: 0; overflow-wrap: anywhere; }
+dt { font-size: 0.8125rem; color: var(--lab-muted); margin-bottom: 4px; }
+dd { margin: 0; line-height: 1.5; }
+.results-heading { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; margin-bottom: 12px; }
+.results-heading p { margin: 0; font-size: 0.875rem; }
+.table-scroll { overflow-x: auto; border: 1px solid var(--lab-divider); border-radius: 8px; }
+.table-scroll:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+table { border-collapse: collapse; width: 100%; min-width: 620px; text-align: left; }
+th, td { padding: 14px 16px; border-bottom: 1px solid var(--lab-divider); line-height: 1.5; }
+thead th { font-size: 0.8125rem; color: var(--lab-muted); }
+tbody th { font-weight: 500; }
+tbody tr:last-child > * { border-bottom: 0; }
+.unit { font-size: 0.875rem; }
+.status { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; background: var(--lab-pending-bg); color: var(--lab-pending-text); }
+.status--ok { background: var(--lab-ok-bg); color: var(--lab-ok-text); }
+.status--flagged { background: var(--lab-flag-bg); color: var(--lab-flag-text); }
+.note { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--lab-divider); }
+.note-text { white-space: pre-line; overflow-wrap: anywhere; line-height: 1.6; }
+.note-author { font-size: 0.8125rem; color: var(--lab-muted); }
+.pending-message { padding: 12px; border-radius: 8px; background: var(--lab-pending-bg); color: var(--lab-pending-text); line-height: 1.5; }
+.message { padding: 24px 0; line-height: 1.6; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+@media (max-width: 480px) { .metadata { grid-template-columns: 1fr; } }

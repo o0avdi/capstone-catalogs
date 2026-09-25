@@ -1,0 +1,60 @@
+<mat-card class="lab-summary" [attr.aria-label]="title" [attr.aria-busy]="state === 'loading'">
+  <mat-card-header>
+    <mat-card-title><h2>{{ title }}</h2></mat-card-title>
+    <mat-card-subtitle *ngIf="collectedOn">Collected {{ collectedOn }}</mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content>
+    <div *ngIf="state === 'loading'" class="state-message" role="status">
+      <p>Loading lab results…</p>
+      <mat-progress-bar mode="indeterminate" aria-label="Loading lab results"></mat-progress-bar>
+    </div>
+
+    <div *ngIf="state === 'error'" class="state-message">
+      <p role="alert">{{ errorMessage }}</p>
+      <button mat-stroked-button type="button" (click)="retry.emit()">Retry</button>
+    </div>
+
+    <ng-container *ngIf="state === 'ready'">
+      <div *ngIf="results.length === 0; else resultsList" class="state-message" role="status">
+        <h3>No results available</h3>
+        <p>Results will appear here when they are available.</p>
+      </div>
+
+      <ng-template #resultsList>
+        <p class="summary-text" aria-live="polite">
+          {{ availableCount }} {{ availableCount === 1 ? 'result' : 'results' }} available
+          <span *ngIf="flaggedCount > 0"> · {{ flaggedCount }} outside reference range</span>
+          <span *ngIf="pendingCount > 0"> · {{ pendingCount }} pending</span>
+        </p>
+
+        <ul class="results-list" aria-label="Lab measurements">
+          <li *ngFor="let result of results; trackBy: trackResult" class="result-row">
+            <div class="result-description">
+              <h3>{{ result.name }}</h3>
+              <p class="reference">Reference range: {{ result.referenceRange || 'Not provided' }}</p>
+            </div>
+            <div class="result-measurement">
+              <p class="value" *ngIf="result.status !== 'pending' && result.value !== null; else noValue">
+                {{ result.value }} <span class="unit">{{ result.unit }}</span>
+              </p>
+              <ng-template #noValue>
+                <p class="value unavailable">{{ result.status === 'pending' ? 'Awaiting result' : 'Not available' }}</p>
+              </ng-template>
+              <span class="status"
+                [class.status--within-range]="result.status === 'within-range' && result.value !== null"
+                [class.status--flagged]="(result.status === 'high' || result.status === 'low') && result.value !== null"
+                [class.status--pending]="result.status === 'pending' || result.value === null">
+                {{ result.status !== 'pending' && result.value === null ? 'Unavailable' : statusLabels[result.status] }}
+              </span>
+            </div>
+          </li>
+        </ul>
+      </ng-template>
+    </ng-container>
+  </mat-card-content>
+
+  <mat-card-actions *ngIf="state === 'ready' && availableCount > 0 && showViewReport" align="end">
+    <button mat-stroked-button type="button" (click)="viewReport.emit()">View full report</button>
+  </mat-card-actions>
+</mat-card>

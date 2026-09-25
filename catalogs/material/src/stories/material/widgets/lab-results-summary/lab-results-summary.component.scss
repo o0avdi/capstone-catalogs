@@ -1,0 +1,44 @@
+:host {
+  display: block;
+  width: 100%;
+  max-width: 640px;
+  // Override these variables in a shared theme to match your design system.
+  --lab-divider: #d9dde3;
+  --lab-muted: #535b66;
+  --lab-ok-bg: #e7f3e9;
+  --lab-ok-text: #20582b;
+  --lab-flag-bg: #fff0db;
+  --lab-flag-text: #754300;
+  --lab-pending-bg: #edf0f4;
+  --lab-pending-text: #424b57;
+}
+
+.lab-summary { width: 100%; }
+h2 { margin: 0; font-size: 1.25rem; line-height: 1.4; font-weight: 600; }
+h3 { margin: 0; font-size: 1rem; line-height: 1.5; font-weight: 600; }
+.summary-text { margin: 20px 0 8px; line-height: 1.6; }
+.results-list { list-style: none; padding: 0; margin: 0; }
+.result-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+  padding: 18px 0;
+  border-top: 1px solid var(--lab-divider);
+}
+.result-description { flex: 1 1 180px; min-width: 0; overflow-wrap: anywhere; }
+.reference { margin: 4px 0 0; font-size: 0.875rem; color: var(--lab-muted); line-height: 1.5; }
+.result-measurement { text-align: right; }
+.value { margin: 0 0 6px; font-size: 1.125rem; font-weight: 600; }
+.unit, .unavailable { font-size: 0.875rem; font-weight: 400; }
+.status { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 0.75rem; line-height: 1.5; font-weight: 600; }
+.status--within-range { background: var(--lab-ok-bg); color: var(--lab-ok-text); }
+.status--flagged { background: var(--lab-flag-bg); color: var(--lab-flag-text); }
+.status--pending { background: var(--lab-pending-bg); color: var(--lab-pending-text); }
+.state-message { padding: 24px 0; }
+.state-message p { margin: 0 0 16px; line-height: 1.6; }
+.state-message h3 { margin-bottom: 8px; }
+@media (max-width: 420px) {
+  .result-measurement { text-align: left; }
+}

@@ -1,0 +1,68 @@
+<mat-card class="report" aria-label="Lab report details" [attr.aria-busy]="state === 'loading'">
+  <mat-card-header>
+    <mat-card-title><h2>{{ state === 'ready' && report ? report.title : 'Lab report' }}</h2></mat-card-title>
+    <mat-card-subtitle *ngIf="state === 'ready' && report">Report {{ report.id }}</mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content>
+    <div *ngIf="state === 'loading'" class="message" role="status">
+      <p>Loading report…</p>
+      <mat-progress-bar mode="indeterminate" aria-label="Loading report"></mat-progress-bar>
+    </div>
+    <div *ngIf="state === 'error'" class="message">
+      <p role="alert">{{ errorMessage }}</p>
+      <button mat-stroked-button type="button" (click)="retry.emit()">Retry</button>
+    </div>
+
+    <ng-container *ngIf="state === 'ready'">
+      <p *ngIf="!report" class="message" role="status">No report available.</p>
+      <ng-container *ngIf="report as details">
+        <dl class="metadata">
+          <div><dt>Collected</dt><dd>{{ details.collectedOn || 'Not provided' }}</dd></div>
+          <div *ngIf="details.reportedOn"><dt>Reported</dt><dd>{{ details.reportedOn }}</dd></div>
+          <div *ngIf="details.laboratory"><dt>Laboratory</dt><dd>{{ details.laboratory }}</dd></div>
+          <div *ngIf="details.specimen"><dt>Specimen</dt><dd>{{ details.specimen }}</dd></div>
+          <div *ngIf="details.orderedBy"><dt>Ordered by</dt><dd>{{ details.orderedBy }}</dd></div>
+        </dl>
+
+        <div class="results-heading">
+          <h3>Results</h3>
+          <p *ngIf="details.results.length">{{ flaggedCount }} outside reference range<span *ngIf="pendingCount"> · {{ pendingCount }} pending</span></p>
+        </div>
+        <p *ngIf="!details.results.length" role="status">No measurements are available for this report yet.</p>
+        <p *ngIf="pendingCount" class="pending-message" role="status">Some results are still pending. Available results are shown below.</p>
+
+        <div *ngIf="details.results.length" class="table-scroll" tabindex="0" role="region" aria-label="Lab measurements; scroll horizontally on small screens">
+          <table>
+            <caption class="visually-hidden">Measurements, reference ranges, and supplied status flags</caption>
+            <thead><tr><th scope="col">Test</th><th scope="col">Result</th><th scope="col">Reference range</th><th scope="col">Status</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let result of details.results; trackBy: trackResult">
+                <th scope="row">{{ result.name }}</th>
+                <td>
+                  <ng-container *ngIf="result.status !== 'pending' && result.value !== null; else missingValue">{{ result.value }} <span class="unit">{{ result.unit }}</span></ng-container>
+                  <ng-template #missingValue>{{ result.status === 'pending' ? 'Awaiting result' : 'Not available' }}</ng-template>
+                </td>
+                <td>{{ result.referenceRange || 'Not provided' }}</td>
+                <td><span class="status"
+                  [class.status--ok]="result.status === 'within-range' && result.value !== null"
+                  [class.status--flagged]="(result.status === 'high' || result.status === 'low') && result.value !== null">
+                  {{ result.status !== 'pending' && result.value === null ? 'Unavailable' : statusLabels[result.status] }}
+                </span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <section class="note" aria-label="Report note">
+          <h3>Report note</h3>
+          <p class="note-text">{{ details.note || 'No report note has been provided.' }}</p>
+          <p *ngIf="details.note && details.noteAuthor" class="note-author">Provided by {{ details.noteAuthor }}</p>
+        </section>
+      </ng-container>
+    </ng-container>
+  </mat-card-content>
+  <mat-card-actions *ngIf="showClose" align="end">
+    <button mat-stroked-button type="button" (click)="closeReport.emit()">Close report</button>
+  </mat-card-actions>
+</mat-card>
