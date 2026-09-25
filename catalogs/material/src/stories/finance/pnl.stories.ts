@@ -11,7 +11,7 @@ const normal: PnlPoint[] = [
   { period: 'Apr', revenue: 780000, expenses: 515000 },
 ];
 const meta: Meta<Args> = {
-  title: 'Finance/Profit and Loss',
+  title: 'Finance/Components/Profit and Loss',
   component: PnlChartComponent,
   tags: ['autodocs'],
   parameters: { layout: 'padded' },

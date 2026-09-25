@@ -12,7 +12,7 @@ const basic: OhlcPoint[] = [
   { date: '2026-05-05', open: 106, high: 113, low: 105, close: 112 },
 ];
 const meta: Meta<Args> = {
-  title: 'Finance/Candlestick',
+  title: 'Finance/Components/Candlestick',
   component: CandlestickChartComponent,
   tags: ['autodocs'],
   parameters: { layout: 'padded' },

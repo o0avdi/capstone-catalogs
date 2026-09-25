@@ -11,7 +11,7 @@ const diversified: RiskReturnPoint[] = [
   { asset: 'Cash', return: 3.2, volatility: 1, allocation: 10 },
 ];
 const meta: Meta<Args> = {
-  title: 'Finance/Risk vs Return',
+  title: 'Finance/Components/Risk vs Return',
   component: RiskReturnChartComponent,
   tags: ['autodocs'],
   parameters: { layout: 'padded' },

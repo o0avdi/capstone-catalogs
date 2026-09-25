@@ -1,172 +1,54 @@
-import { Component } from '@angular/core';
-import { AllocationPoint, PnlPoint, RiskReturnPoint, TimeSeriesPoint } from '../finance.types';
+import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
+import { ExecutiveDashboardConfig, ReportingPeriod } from '../finance.types';
 import { MetricCardComponent } from './metric-card.component';
-import { PnlChartComponent } from './pnl-chart.component';
-import { PortfolioAllocationChartComponent } from './portfolio-allocation-chart.component';
 import { PriceTrendChartComponent } from './price-trend-chart.component';
-import { RiskReturnChartComponent } from './risk-return-chart.component';
+import { TransactionTableComponent } from './transaction-table.component';
+import { FinancialSummaryComponent } from './financial-summary.component';
+import { FinancePanelComponent } from '../shared/finance-panel.component';
+
 @Component({
   selector: 'finance-dashboard',
   standalone: true,
   imports: [
     MetricCardComponent,
     PriceTrendChartComponent,
-    PortfolioAllocationChartComponent,
-    PnlChartComponent,
-    RiskReturnChartComponent,
+    TransactionTableComponent,
+    FinancialSummaryComponent,
+    FinancePanelComponent,
   ],
-  template: `<main aria-label="Executive finance dashboard">
-    <header>
-      <div>
-        <p class="eyebrow">Illustrative portfolio overview</p>
-        <h2>Executive summary</h2>
-      </div>
-      <span>FY 2026 · local demo data</span>
-    </header>
-    <section class="metrics">
-      <finance-metric-card
-        label="Revenue"
-        value="$4.8M"
-        change="+8.4%"
-        helper="vs. prior period"
-        state="positive"
-      /><finance-metric-card
-        label="Operating profit"
-        value="$1.1M"
-        change="+3.2%"
-        helper="23% margin"
-        state="positive"
-      /><finance-metric-card
-        label="Cash"
-        value="$860K"
-        change="-1.1%"
-        helper="available liquidity"
-        state="negative"
-      /><finance-metric-card
-        label="Investment return"
-        value="7.6%"
-        change="On plan"
-        helper="year to date"
-        state="neutral"
-      />
-    </section>
-    <section class="grid">
-      <article class="wide">
-        <h3>Price trend</h3>
-        <finance-price-trend-chart [data]="trend" />
-      </article>
-      <article>
-        <h3>Portfolio allocation</h3>
-        <finance-portfolio-allocation-chart [data]="allocation" />
-      </article>
-      <article class="wide">
-        <h3>Profit and loss</h3>
-        <finance-pnl-chart [data]="pnl" />
-      </article>
-      <article>
-        <h3>Risk vs return</h3>
-        <finance-risk-return-chart [data]="risk" />
-      </article>
-    </section>
-  </main>`,
-  styles: [
-    `
-      main {
-        font-family: system-ui, sans-serif;
-        color: #0f172a;
-        max-width: 1400px;
-        margin: auto;
-      }
-      header {
-        display: flex;
-        justify-content: space-between;
-        gap: 16px;
-        align-items: end;
-        margin-bottom: 20px;
-      }
-      h2,
-      h3,
-      p {
-        margin: 0;
-      }
-      h2 {
-        font-size: 26px;
-      }
-      .eyebrow,
-      header span {
-        font-size: 13px;
-        color: #64748b;
-      }
-      .metrics {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 14px;
-        margin-bottom: 18px;
-      }
-      .grid {
-        display: grid;
-        grid-template-columns: 2fr 1fr;
-        gap: 18px;
-      }
-      .grid article {
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 16px;
-        background: #fff;
-        min-width: 0;
-      }
-      .grid h3 {
-        font-size: 15px;
-        margin-bottom: 12px;
-      }
-      @media (max-width: 850px) {
-        .metrics {
-          grid-template-columns: repeat(2, 1fr);
-        }
-        .grid {
-          grid-template-columns: 1fr;
-        }
-        .wide {
-          grid-column: auto;
-        }
-      }
-      @media (max-width: 480px) {
-        header {
-          align-items: start;
-          flex-direction: column;
-        }
-        .metrics {
-          grid-template-columns: 1fr;
-        }
-      }
-    `,
-  ],
+  templateUrl: './finance-dashboard.component.html',
+  styleUrls: ['./finance-dashboard.component.scss'],
 })
-export class FinanceDashboardComponent {
-  trend: TimeSeriesPoint[] = [
-    { date: '2026-01-01', value: 100, benchmark: 100 },
-    { date: '2026-02-01', value: 104, benchmark: 102 },
-    { date: '2026-03-01', value: 102, benchmark: 101 },
-    { date: '2026-04-01', value: 109, benchmark: 105 },
-    { date: '2026-05-01', value: 112, benchmark: 107 },
-    { date: '2026-06-01', value: 116, benchmark: 110 },
-  ];
-  allocation: AllocationPoint[] = [
-    { category: 'Equities', value: 48 },
-    { category: 'Bonds', value: 27 },
-    { category: 'Alternatives', value: 15 },
-    { category: 'Cash', value: 10 },
-  ];
-  pnl: PnlPoint[] = [
-    { period: 'Jan', revenue: 680000, expenses: 460000 },
-    { period: 'Feb', revenue: 720000, expenses: 485000 },
-    { period: 'Mar', revenue: 755000, expenses: 500000 },
-    { period: 'Apr', revenue: 780000, expenses: 515000 },
-  ];
-  risk: RiskReturnPoint[] = [
-    { asset: 'Equities', return: 9.2, volatility: 16, allocation: 48 },
-    { asset: 'Bonds', return: 4.1, volatility: 6, allocation: 27 },
-    { asset: 'Alternatives', return: 7.3, volatility: 12, allocation: 15 },
-    { asset: 'Cash', return: 3.2, volatility: 1, allocation: 10 },
-  ];
+export class FinanceDashboardComponent implements OnChanges {
+  @Input({ required: true }) config: ExecutiveDashboardConfig = {
+    title: 'Executive dashboard',
+    periods: [],
+  };
+  @Input() initialPeriodId = '';
+  @Input() loading = false;
+  @Input() error = '';
+  @Output() periodChange = new EventEmitter<string>();
+  selectedPeriodId = '';
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['config'] || changes['initialPeriodId']) {
+      this.selectedPeriodId =
+        this.config.periods.find((p) => p.id === this.initialPeriodId)?.id ??
+        this.config.periods[0]?.id ??
+        '';
+    }
+  }
+  get period(): ReportingPeriod | undefined {
+    return this.config.periods.find((p) => p.id === this.selectedPeriodId);
+  }
+  get currency(): string {
+    return this.config.currency ?? 'USD';
+  }
+  get locale(): string {
+    return this.config.locale ?? 'en-US';
+  }
+  selectPeriod(id: string): void {
+    if (!this.config.periods.some((p) => p.id === id)) return;
+    this.selectedPeriodId = id;
+    this.periodChange.emit(id);
+  }
 }

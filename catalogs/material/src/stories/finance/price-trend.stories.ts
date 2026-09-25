@@ -1,10 +1,7 @@
+import { overviewConfig } from '../../app/finance/data/finance.fixtures';
 import type { Meta, StoryObj } from '@storybook/angular';
 import { PriceTrendChartComponent } from '../../app/finance/components/price-trend-chart.component';
 import { TimeSeriesPoint } from '../../app/finance/finance.types';
-interface Args {
-  data: TimeSeriesPoint[];
-  title: string;
-}
 const basic: TimeSeriesPoint[] = [
   { date: '2026-01-01', value: 100 },
   { date: '2026-02-01', value: 104 },
@@ -12,15 +9,51 @@ const basic: TimeSeriesPoint[] = [
   { date: '2026-04-01', value: 109 },
   { date: '2026-05-01', value: 112 },
 ];
-const meta: Meta<Args> = {
-  title: 'Finance/Price Trend',
+const meta: Meta<PriceTrendChartComponent> = {
+  title: 'Finance/Components/Performance Chart',
   component: PriceTrendChartComponent,
   tags: ['autodocs'],
-  parameters: { layout: 'padded' },
-  args: { data: basic, title: 'Portfolio value' },
+  parameters: {
+    controls: {
+      include: [
+        'data',
+        'title',
+        'seriesLabel',
+        'comparisonLabel',
+        'format',
+        'currency',
+        'locale',
+        'chartType',
+        'zeroBaseline',
+      ],
+    },
+    layout: 'padded',
+    docs: {
+      description: {
+        component:
+          'The existing PriceTrendChart extended with configurable series labels, formatting, line/bar modes, empty state and an accessible data table. Vega-Lite specifications are rendered by the shared VegaChart wrapper.',
+      },
+    },
+  },
+  args: {
+    data: basic,
+    title: 'Portfolio value',
+    seriesLabel: 'Portfolio',
+    comparisonLabel: 'Benchmark',
+    format: 'currency',
+    currency: 'USD',
+    locale: 'en-US',
+    chartType: 'line',
+    zeroBaseline: false,
+  },
+  argTypes: {
+    chartType: { control: 'inline-radio', options: ['line', 'bar'] },
+    format: { control: 'select', options: ['currency', 'percent', 'number', 'compact'] },
+    data: { control: 'object' },
+  },
 };
 export default meta;
-type Story = StoryObj<Args>;
+type Story = StoryObj<PriceTrendChartComponent>;
 export const Basic: Story = {};
 export const WithBenchmark: Story = {
   args: {
@@ -39,3 +72,15 @@ export const VolatilePeriod: Story = {
     ],
   },
 };
+
+export const RevenueAndExpenses: Story = {
+  args: {
+    data: overviewConfig.periods[0].chartData,
+    title: 'Revenue and expenses',
+    seriesLabel: 'Revenue',
+    comparisonLabel: 'Expenses',
+    zeroBaseline: true,
+  },
+};
+export const GroupedBars: Story = { args: { ...RevenueAndExpenses.args, chartType: 'bar' } };
+export const Empty: Story = { args: { data: [] } };

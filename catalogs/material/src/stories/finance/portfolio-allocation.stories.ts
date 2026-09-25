@@ -5,7 +5,7 @@ interface Args {
   data: AllocationPoint[];
 }
 const meta: Meta<Args> = {
-  title: 'Finance/Portfolio Allocation',
+  title: 'Finance/Components/Portfolio Allocation',
   component: PortfolioAllocationChartComponent,
   tags: ['autodocs'],
   parameters: { layout: 'padded' },
