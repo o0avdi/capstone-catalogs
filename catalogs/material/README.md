@@ -36,6 +36,30 @@ ng build
 
 This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
 
+## Story JSON API
+
+Start the REST API for the Angular and React Storybook stories:
+
+```bash
+npm run stories:api
+```
+
+The API listens on `http://127.0.0.1:6011` by default and provides:
+
+- `GET /api/health` — service status
+- `GET /api/stories` — story-file metadata and exported story names
+- `GET /api/stories?includeSource=true` — metadata with story-file source
+- `GET /api/stories/:id` — one story and its source file
+- `GET /api/export` — downloadable full JSON export
+
+Set `PORT` or `HOST` to change the listener. The API enables CORS so the catalog can read it from a browser.
+
+To write the full export directly to `dist/stories.json`, run:
+
+```bash
+npm run stories:json
+```
+
 ## Running unit tests
 
 To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
