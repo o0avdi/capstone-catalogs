@@ -1,5 +1,5 @@
 import { createServer } from 'node:http';
-import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import { dirname, extname, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -94,13 +94,33 @@ export async function collectStoryCatalog({ includeSource = false } = {}) {
   };
 }
 
-export async function exportStoryCatalog(
-  outputPath = resolve(projectRoot, 'dist', 'stories.json'),
-) {
+function toShadcnComponent(file) {
+  const component = toId(file.title.replace(/^Shadcn\//, ''));
+
+  return {
+    component,
+    title: file.title,
+    file: file.file,
+    framework: file.framework,
+    storyCount: file.stories.length,
+    stories: file.stories,
+    source: file.source,
+  };
+}
+
+async function collectShadcnCatalog() {
   const catalog = await collectStoryCatalog({ includeSource: true });
-  await mkdir(dirname(outputPath), { recursive: true });
-  await writeFile(outputPath, `${JSON.stringify(catalog, null, 2)}\n`);
-  return { catalog, outputPath };
+  const components = catalog.files
+    .filter((file) => file.title.startsWith('Shadcn/'))
+    .map(toShadcnComponent);
+
+  return {
+    schemaVersion: 1,
+    generatedAt: catalog.generatedAt,
+    totalComponents: components.length,
+    totalStories: components.reduce((total, component) => total + component.storyCount, 0),
+    components,
+  };
 }
 
 function sendJson(response, status, body, extraHeaders = {}) {
@@ -140,43 +160,57 @@ export function createStoryApiServer() {
         return;
       }
 
-      if (url.pathname === '/api/stories') {
-        const includeSource = url.searchParams.get('includeSource') === 'true';
-        sendJson(response, 200, await collectStoryCatalog({ includeSource }));
-        return;
-      }
-
-      if (url.pathname === '/api/export') {
-        sendJson(response, 200, await collectStoryCatalog({ includeSource: true }), {
-          'Content-Disposition': 'attachment; filename="stories.json"',
+      if (url.pathname === '/api' || url.pathname === '/api/') {
+        const catalog = await collectShadcnCatalog();
+        sendJson(response, 200, {
+          message: 'Use /api/:component to view one Shadcn component as JSON.',
+          allComponents: '/api/shadcn',
+          totalComponents: catalog.totalComponents,
+          components: catalog.components.map((component) => ({
+            component: component.component,
+            title: component.title,
+            url: `/api/${component.component}`,
+            storyCount: component.storyCount,
+          })),
         });
         return;
       }
 
-      if (url.pathname.startsWith('/api/stories/')) {
-        const id = decodeURIComponent(url.pathname.slice('/api/stories/'.length));
-        const catalog = await collectStoryCatalog({ includeSource: true });
-        const file = catalog.files.find((entry) => entry.stories.some((story) => story.id === id));
-        const story = file?.stories.find((entry) => entry.id === id);
+      if (url.pathname === '/api/shadcn') {
+        sendJson(response, 200, await collectShadcnCatalog());
+        return;
+      }
 
-        if (!file || !story) {
-          sendJson(response, 404, { error: 'Story not found', id });
+      if (url.pathname === '/api/stories') {
+        sendJson(response, 200, await collectStoryCatalog());
+        return;
+      }
+
+      const componentMatch = url.pathname.match(/^\/api\/([^/]+)\/?$/);
+
+      if (componentMatch) {
+        const requestedComponent = toId(decodeURIComponent(componentMatch[1]));
+        const catalog = await collectShadcnCatalog();
+        const component = catalog.components.find(
+          (entry) => entry.component === requestedComponent,
+        );
+
+        if (component) {
+          sendJson(response, 200, component);
           return;
         }
 
-        sendJson(response, 200, {
-          ...story,
-          title: file.title,
-          framework: file.framework,
-          file: file.file,
-          source: file.source,
+        sendJson(response, 404, {
+          error: 'Shadcn component not found',
+          component: requestedComponent,
+          availableComponents: catalog.components.map((entry) => entry.component),
         });
         return;
       }
 
       sendJson(response, 404, {
         error: 'Not found',
-        endpoints: ['/api/health', '/api/stories', '/api/stories/:id', '/api/export'],
+        endpoints: ['/api', '/api/health', '/api/shadcn', '/api/:component', '/api/stories'],
       });
     } catch (error) {
       console.error(error);
@@ -188,20 +222,8 @@ export function createStoryApiServer() {
 async function main() {
   const command = process.argv[2] ?? 'serve';
 
-  if (command === 'export') {
-    const outputPath = resolve(
-      projectRoot,
-      process.argv[3] ?? process.env.STORIES_JSON_OUTPUT ?? 'dist/stories.json',
-    );
-    const { catalog } = await exportStoryCatalog(outputPath);
-    console.log(
-      `Exported ${catalog.totalStories} stories from ${catalog.totalFiles} files to ${outputPath}`,
-    );
-    return;
-  }
-
   if (command !== 'serve') {
-    throw new Error(`Unknown command: ${command}. Use "serve" or "export".`);
+    throw new Error(`Unknown command: ${command}. Use "serve".`);
   }
 
   const port = Number.parseInt(process.env.PORT ?? '6011', 10);
@@ -214,8 +236,9 @@ async function main() {
   const server = createStoryApiServer();
   server.listen(port, host, () => {
     console.log(`Story JSON API listening on http://${host}:${port}`);
-    console.log(`Catalog: http://${host}:${port}/api/stories`);
-    console.log(`Download: http://${host}:${port}/api/export`);
+    console.log(`Components: http://${host}:${port}/api`);
+    console.log(`Accordion: http://${host}:${port}/api/accordion`);
+    console.log(`All Shadcn: http://${host}:${port}/api/shadcn`);
   });
 }
 

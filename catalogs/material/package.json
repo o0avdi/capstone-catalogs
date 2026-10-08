@@ -12,8 +12,7 @@
     "storybook:shadcn": "storybook dev -p 6007 -c .storybook-shadcn",
     "build-storybook": "ng run material-catalog:build-storybook",
     "build-storybook:shadcn": "storybook build -c .storybook-shadcn -o storybook-static-shadcn",
-    "stories:api": "node scripts/story-json-api.mjs serve",
-    "stories:json": "node scripts/story-json-api.mjs export"
+    "stories:api": "node scripts/story-json-api.mjs serve"
   },
   "private": true,
   "packageManager": "npm@11.19.0",

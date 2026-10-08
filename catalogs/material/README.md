@@ -44,21 +44,17 @@ Start the REST API for the Angular and React Storybook stories:
 npm run stories:api
 ```
 
-The API listens on `http://127.0.0.1:6011` by default and provides:
+The API listens on `http://127.0.0.1:6011` by default and prints JSON directly in the browser:
 
+- `GET /api` — list every available Shadcn component URL
 - `GET /api/health` — service status
-- `GET /api/stories` — story-file metadata and exported story names
-- `GET /api/stories?includeSource=true` — metadata with story-file source
-- `GET /api/stories/:id` — one story and its source file
-- `GET /api/export` — downloadable full JSON export
+- `GET /api/accordion` — Accordion stories and source as JSON
+- `GET /api/button` — Button stories and source as JSON
+- `GET /api/:component` — any Shadcn component by its URL name
+- `GET /api/shadcn` — all Shadcn components as JSON
+- `GET /api/stories` — metadata for every Angular and React story file
 
 Set `PORT` or `HOST` to change the listener. The API enables CORS so the catalog can read it from a browser.
-
-To write the full export directly to `dist/stories.json`, run:
-
-```bash
-npm run stories:json
-```
 
 ## Running unit tests
 
