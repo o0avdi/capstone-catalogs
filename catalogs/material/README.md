@@ -48,8 +48,8 @@ The API listens on `http://127.0.0.1:6011` by default and prints JSON directly i
 
 - `GET /api` — list every available Shadcn component URL
 - `GET /api/health` — service status
-- `GET /api/accordion` — Accordion stories and source as JSON
-- `GET /api/button` — Button stories and source as JSON
+- `GET /api/accordion` — Accordion metadata and story states as JSON
+- `GET /api/button` — Button metadata and story states as JSON
 - `GET /api/:component` — any Shadcn component by its URL name
 - `GET /api/shadcn` — all Shadcn components as JSON
 - `GET /api/stories` — metadata for every Angular and React story file

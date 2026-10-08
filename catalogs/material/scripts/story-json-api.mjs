@@ -74,14 +74,12 @@ export function parseStoryFile(source, filePath) {
   };
 }
 
-export async function collectStoryCatalog({ includeSource = false } = {}) {
+export async function collectStoryCatalog() {
   const paths = await findStoryFiles(storiesRoot);
   const files = await Promise.all(
     paths.map(async (path) => {
       const source = await readFile(path, 'utf8');
-      const parsed = parseStoryFile(source, path);
-
-      return includeSource ? { ...parsed, source } : parsed;
+      return parseStoryFile(source, path);
     }),
   );
 
@@ -104,12 +102,11 @@ function toShadcnComponent(file) {
     framework: file.framework,
     storyCount: file.stories.length,
     stories: file.stories,
-    source: file.source,
   };
 }
 
 async function collectShadcnCatalog() {
-  const catalog = await collectStoryCatalog({ includeSource: true });
+  const catalog = await collectStoryCatalog();
   const components = catalog.files
     .filter((file) => file.title.startsWith('Shadcn/'))
     .map(toShadcnComponent);
