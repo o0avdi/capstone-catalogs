@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023", "DOM"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "types": ["vite/client"],
+    "paths": {
+      "@/*": ["./src/shadcn/*"]
+    }
+  },
+  "include": [
+    ".storybook-shadcn/**/*.ts",
+    ".storybook-shadcn/**/*.tsx",
+    "src/shadcn/lib/utils.ts",
+    "src/shadcn/components/ui/accordion.tsx",
+    "src/shadcn/components/ui/card.tsx",
+    "src/stories/Shadcn/**/*.tsx"
+  ]
+}

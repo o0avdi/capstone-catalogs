@@ -6,7 +6,7 @@
     "resolveJsonModule": true,
     "moduleResolution": "bundler"
   },
-  "exclude": ["../src/test.ts", "../src/**/*.spec.ts"],
+  "exclude": ["../src/test.ts", "../src/**/*.spec.ts", "../src/stories/Shadcn/**/*", "../src/shadcn/**/*"],
   "include": ["../src/**/*.ts", "../src/**/*.stories.*", "./preview.ts"],
   "files": ["./typings.d.ts"]
 }

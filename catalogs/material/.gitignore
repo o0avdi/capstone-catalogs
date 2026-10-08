@@ -45,5 +45,6 @@ Thumbs.db
 
 *storybook.log
 storybook-static
+storybook-static-shadcn
 
 /documentation.json
