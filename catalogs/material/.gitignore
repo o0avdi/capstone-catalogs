@@ -48,3 +48,5 @@ storybook-static
 storybook-static-shadcn
 
 /documentation.json
+/a2ui-output/
+/a2ui-output.zip

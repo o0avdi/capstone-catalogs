@@ -1,0 +1,482 @@
+/**
+ * Copyright 2026 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+// @vitest-environment jsdom
+import {describe, it, expect, afterEach, vi} from 'vitest';
+import {bootstrapLitSandbox, A2uiSandboxRoot, ContextRequestEventPayload} from './lit-bridge';
+import {a2uiBridge} from '../preview-bridge';
+import {Catalog, ComponentApi} from '@a2ui/web_core/v0_9';
+import {TemplateResult} from 'lit';
+
+/**
+ * Matches any viewport-relative length unit.
+ *
+ * This pattern and FULL_HEIGHT are repeated byte for byte in the three sample
+ * guest guards, each named surface-host-sizing.spec.ts. Those are separate
+ * packages with no shared test-only module between them, so a change to
+ * either pattern has to be made in all four places by hand.
+ */
+const VIEWPORT_UNIT = /\d+\s*(vh|dvh|svh|lvh|vmin|vmax|vb|vi)\b/i;
+
+/** Matches a full-height declaration that inherits the iframe viewport. */
+const FULL_HEIGHT = /height:\s*['"`]?100%/i;
+
+describe('Lit Framework Adapter Spec', () => {
+  const dummyCatalog = {
+    id: 'https://a2ui.org/specification/v0_9/basic_catalog.json',
+    components: new Map<string, ComponentApi>(),
+  } as unknown as Catalog<ComponentApi>;
+
+  afterEach(() => {
+    // Clear global state to not pollute other tests
+    A2uiSandboxRoot.catalogs = [];
+    A2uiSandboxRoot.catalogJson = undefined;
+    A2uiSandboxRoot.markdownRenderer = undefined;
+    a2uiBridge.destroy();
+    vi.restoreAllMocks();
+  });
+
+  it('defines custom element using customTagName from options block', () => {
+    const tagName = 'app-root';
+    bootstrapLitSandbox([dummyCatalog], {elementTagName: tagName});
+
+    expect(customElements.get(tagName)).toBe(A2uiSandboxRoot);
+  });
+
+  it('passes through preloaded catalogJson down to active renderer connection synchronously', () => {
+    const preload = {catalogId: 'preload-id', version: 'v0.9', components: {}};
+    bootstrapLitSandbox([dummyCatalog], {
+      elementTagName: 'app-root',
+      catalogJson: preload,
+    });
+
+    const attachSpy = vi.spyOn(a2uiBridge, 'attachRenderer');
+
+    const element = new A2uiSandboxRoot();
+    document.body.appendChild(element);
+
+    expect(attachSpy).toHaveBeenCalled();
+    const configPassed = attachSpy.mock.calls[0][1];
+    expect(configPassed.catalogJson).toBe(preload);
+
+    element.remove();
+  });
+
+  it('aligns elements in the static catalogs array with the resolved catalogId when onCatalogResolved is triggered', () => {
+    const myCatalog = {
+      id: 'https://default-catalog-id.json',
+      components: new Map<string, ComponentApi>(),
+    } as unknown as Catalog<ComponentApi>;
+    bootstrapLitSandbox([myCatalog], {elementTagName: 'app-root'});
+
+    const attachSpy = vi.spyOn(a2uiBridge, 'attachRenderer');
+
+    const element = new A2uiSandboxRoot();
+    document.body.appendChild(element);
+
+    expect(attachSpy).toHaveBeenCalled();
+    const configPassed = attachSpy.mock.calls[0][1];
+    expect(configPassed.onCatalogResolved).toBeDefined();
+
+    // Trigger the callback
+    configPassed.onCatalogResolved!('urn:a2ui:catalog:resolved_dynamic_id');
+
+    expect(myCatalog.id).toBe('urn:a2ui:catalog:resolved_dynamic_id');
+    expect(A2uiSandboxRoot.catalogs[0].id).toBe('urn:a2ui:catalog:resolved_dynamic_id');
+
+    element.remove();
+  });
+
+  it('handles context-request events for A2UIMarkdown and cleanly removes the listener on disconnect', () => {
+    bootstrapLitSandbox([dummyCatalog], {
+      elementTagName: 'app-root',
+      markdownRenderer: async (text: string) => `<h1>${text}</h1>`,
+    });
+
+    const element = new A2uiSandboxRoot();
+    document.body.appendChild(element);
+
+    let resolvedRenderer: unknown = null;
+    const contextEvent = new CustomEvent('context-request', {
+      bubbles: true,
+      composed: true,
+    }) as unknown as ContextRequestEventPayload;
+    contextEvent.context = 'A2UIMarkdown';
+    contextEvent.callback = renderer => {
+      resolvedRenderer = renderer;
+    };
+
+    element.dispatchEvent(contextEvent);
+    expect(resolvedRenderer).toBeDefined();
+
+    // Verify cleanup on disconnect
+    element.remove();
+    let afterRemoveRenderer: unknown = null;
+    const postRemoveEvent = new CustomEvent('context-request', {
+      bubbles: true,
+      composed: true,
+    }) as unknown as ContextRequestEventPayload;
+    postRemoveEvent.context = 'A2UIMarkdown';
+    postRemoveEvent.callback = renderer => {
+      afterRemoveRenderer = renderer;
+    };
+
+    element.dispatchEvent(postRemoveEvent);
+    expect(afterRemoveRenderer).toBeNull();
+  });
+
+  it('resolves context requests carrying an arbitrary object with a custom toString() method correctly', () => {
+    bootstrapLitSandbox([dummyCatalog], {
+      elementTagName: 'app-root-tostring',
+      markdownRenderer: async (text: string) => `<i>${text}</i>`,
+    });
+
+    const ctor = customElements.get('app-root-tostring');
+    const element = new ctor!();
+    document.body.appendChild(element);
+
+    let resolvedRenderer: unknown = null;
+    const contextEvent = new CustomEvent('context-request', {
+      bubbles: true,
+      composed: true,
+    }) as unknown as ContextRequestEventPayload;
+
+    contextEvent.context = {
+      toString: () => 'CustomA2UIMarkdownContext',
+    } as unknown;
+    contextEvent.callback = renderer => {
+      resolvedRenderer = renderer;
+    };
+
+    element.dispatchEvent(contextEvent);
+    expect(resolvedRenderer).toBeDefined();
+
+    element.remove();
+  });
+
+  it('handles context requests carrying Object.create(null) defensively without throwing a TypeError', () => {
+    bootstrapLitSandbox([dummyCatalog], {
+      elementTagName: 'app-root-nullproto',
+      markdownRenderer: async (text: string) => `<i>${text}</i>`,
+    });
+
+    const ctor = customElements.get('app-root-nullproto');
+    const element = new ctor!();
+    document.body.appendChild(element);
+
+    const contextEvent = new CustomEvent('context-request', {
+      bubbles: true,
+      composed: true,
+    }) as unknown as ContextRequestEventPayload;
+
+    contextEvent.context = Object.create(null);
+    contextEvent.callback = () => {};
+
+    expect(() => {
+      element.dispatchEvent(contextEvent);
+    }).not.toThrow();
+
+    element.remove();
+  });
+
+  it('dispatches outbound component actions to a2uiBridge.sendAction', async () => {
+    const sendActionSpy = vi.spyOn(a2uiBridge, 'sendAction');
+    bootstrapLitSandbox([dummyCatalog], {elementTagName: 'app-root'});
+
+    const element = new A2uiSandboxRoot();
+    document.body.appendChild(element);
+
+    interface MockSurface {
+      _onAction: {emit(val: unknown): void};
+    }
+    interface MockProcessor {
+      processMessages(messages: unknown[]): void;
+      model: {getSurface(id: string): MockSurface};
+    }
+    const processor = element['processor'] as unknown as MockProcessor;
+
+    processor.processMessages([
+      {
+        version: 'v0.9',
+        createSurface: {
+          surfaceId: 'surf-action',
+          catalogId: dummyCatalog.id,
+        },
+      },
+    ]);
+
+    const surface = processor.model.getSurface('surf-action');
+    surface['_onAction'].emit({action: {click: true}});
+
+    expect(sendActionSpy).toHaveBeenCalled();
+
+    element.remove();
+  });
+
+  it('renders active a2ui-surface element onSurfaceReady and reverts to waiting banner onSurfaceCleared', () => {
+    bootstrapLitSandbox([dummyCatalog], {elementTagName: 'app-root'});
+    const attachSpy = vi.spyOn(a2uiBridge, 'attachRenderer');
+
+    const element = new A2uiSandboxRoot();
+    document.body.appendChild(element);
+
+    const config = attachSpy.mock.lastCall![1];
+
+    // Initial render is waiting banner
+    let rendered = element.render() as unknown as TemplateResult;
+    expect(rendered.strings.join('')).toContain('A2UI Lit Sandbox active');
+
+    // Trigger onSurfaceReady via real message processing
+    interface SimProcessor {
+      processMessages(messages: unknown[]): void;
+      model: {getSurface(id: string): unknown};
+    }
+    const processor = element['processor'] as unknown as SimProcessor;
+    processor.processMessages([
+      {
+        version: 'v0.9',
+        createSurface: {
+          surfaceId: 'surf-lit',
+          catalogId: dummyCatalog.id,
+        },
+      },
+    ]);
+
+    const mockSurface = processor.model.getSurface('surf-lit');
+    config.onSurfaceReady('surf-lit');
+
+    expect(element['surface']).toBe(mockSurface);
+
+    rendered = element.render() as unknown as TemplateResult;
+    expect(rendered.strings.join('')).toContain('a2ui-surface');
+    expect(rendered.strings.join('')).toContain('slot="loading"');
+
+    // Trigger onSurfaceCleared
+    if (config.onSurfaceCleared) {
+      config.onSurfaceCleared();
+    }
+    expect(element['surface']).toBeUndefined();
+
+    rendered = element.render() as unknown as TemplateResult;
+    expect(rendered.strings.join('')).toContain('A2UI Lit Sandbox active');
+
+    element.remove();
+  });
+
+  it('defines an anonymous subclass if A2uiSandboxRoot constructor is already registered to another tag', () => {
+    bootstrapLitSandbox([dummyCatalog], {elementTagName: 'app-root'});
+    const tag2 = 'app-root-second';
+
+    bootstrapLitSandbox([dummyCatalog], {elementTagName: tag2});
+
+    const ctor = customElements.get(tag2);
+    expect(ctor).toBeDefined();
+    expect(ctor).not.toBe(A2uiSandboxRoot);
+    expect(new ctor!()).toBeInstanceOf(A2uiSandboxRoot);
+  });
+
+  it('resolves static subclass overrides (catalogs, catalogJson) properly upon initialization', () => {
+    const customCatalog = {
+      id: 'https://custom.json',
+      components: new Map(),
+    } as unknown as Catalog<ComponentApi>;
+    const customPreload = {custom: true};
+
+    class CustomSandboxRoot extends A2uiSandboxRoot {
+      static catalogs = [customCatalog];
+      static catalogJson = customPreload;
+    }
+
+    customElements.define('custom-sandbox-root', CustomSandboxRoot);
+
+    const attachSpy = vi.spyOn(a2uiBridge, 'attachRenderer');
+
+    const element = new CustomSandboxRoot();
+    document.body.appendChild(element);
+
+    expect(attachSpy).toHaveBeenCalled();
+    const configPassed = attachSpy.mock.lastCall![1];
+
+    expect(configPassed.catalogJson).toBe(customPreload);
+
+    configPassed.onCatalogResolved!('urn:a2ui:catalog:subclass_id');
+    expect(customCatalog.id).toBe('urn:a2ui:catalog:subclass_id');
+
+    element.remove();
+  });
+
+  it('isolates assigned static properties (catalogs, catalogJson) per registered target class without cross-contamination', () => {
+    const cat1 = {id: 'cat-1'} as unknown as Catalog<ComponentApi>;
+    const cat2 = {id: 'cat-2'} as unknown as Catalog<ComponentApi>;
+
+    const ctor1 = bootstrapLitSandbox([cat1], {
+      elementTagName: 'box-one',
+      catalogJson: {box: 1},
+    });
+
+    const ctor2 = bootstrapLitSandbox([cat2], {
+      elementTagName: 'box-two',
+      catalogJson: {box: 2},
+    });
+
+    expect(ctor1).not.toBe(ctor2);
+    expect(ctor1.catalogs).toEqual([cat1]);
+    expect(ctor1.catalogJson).toEqual({box: 1});
+
+    expect(ctor2.catalogs).toEqual([cat2]);
+    expect(ctor2.catalogJson).toEqual({box: 2});
+  });
+
+  it('persists programmatic assignment of markdownRenderer across DOM disconnection and reconnection', () => {
+    bootstrapLitSandbox([dummyCatalog], {
+      elementTagName: 'app-root-persist',
+    });
+
+    const ctor = customElements.get('app-root-persist');
+    const element = new ctor!() as A2uiSandboxRoot;
+    document.body.appendChild(element);
+
+    const customRenderer = async (text: string) => `<b>${text}</b>`;
+    element.markdownRenderer = customRenderer;
+
+    expect(element.markdownRenderer).toBe(customRenderer);
+
+    element.remove();
+    document.body.appendChild(element);
+
+    expect(element.markdownRenderer).toBe(customRenderer);
+
+    element.remove();
+  });
+
+  it('upgrades pre-rendered DOM element synchronously and successfully resolves static configuration properties', () => {
+    const preElement = document.createElement('app-root-sync');
+    document.body.appendChild(preElement);
+
+    const catSync = {id: 'cat-sync'} as unknown as Catalog<ComponentApi>;
+    bootstrapLitSandbox([catSync], {
+      elementTagName: 'app-root-sync',
+      catalogJson: {sync: true},
+    });
+
+    const upgraded = document.querySelector('app-root-sync') as A2uiSandboxRoot;
+    expect(upgraded).toBeInstanceOf(A2uiSandboxRoot);
+
+    const attachSpy = vi.spyOn(a2uiBridge, 'attachRenderer');
+    upgraded.connectedCallback();
+
+    expect(attachSpy).toHaveBeenCalled();
+    const configPassed = attachSpy.mock.lastCall![1];
+    expect(configPassed.catalogJson).toEqual({sync: true});
+
+    preElement.remove();
+  });
+
+  it('passes onThemeChange option through sandbox configuration to attachRenderer', () => {
+    const onThemeChange = vi.fn();
+    bootstrapLitSandbox([dummyCatalog], {
+      elementTagName: 'app-root-theme-test',
+      onThemeChange,
+    });
+
+    const attachSpy = vi.spyOn(a2uiBridge, 'attachRenderer');
+
+    const ctor = customElements.get('app-root-theme-test');
+    const element = new ctor!();
+    document.body.appendChild(element);
+
+    expect(attachSpy).toHaveBeenCalled();
+    const configPassed = attachSpy.mock.lastCall![1];
+    expect(configPassed.onThemeChange).toBe(onThemeChange);
+
+    element.remove();
+  });
+
+  it('defines static styles without viewport-coupled host sizing and with a fixed error overlay', () => {
+    const cssText = A2uiSandboxRoot.styles.cssText;
+    // The host sizes the preview iframe to the height this guest reports, so a
+    // viewport-derived host height feeds the host's last decision back into the
+    // next measurement, producing a SURFACE_RESIZE feedback loop.
+    expect(cssText).not.toMatch(VIEWPORT_UNIT);
+    // FULL_HEIGHT bans `height: 100%` and `min-height: 100%`, both of which
+    // resolve against the frame the host just applied. A pixel min-height is
+    // derived from content, not from the frame, so it stays allowed.
+    expect(cssText).not.toMatch(FULL_HEIGHT);
+    expect(cssText).toContain('.error-overlay');
+    expect(cssText).toContain('position: fixed');
+    expect(cssText).toContain('z-index: 9999');
+    expect(cssText).not.toContain('--a2ui-color-error-overlay-bg');
+    expect(cssText).not.toContain('--a2ui-color-error-overlay-text');
+    expect(cssText).toContain('--a2ui-color-surface');
+    expect(cssText).toContain('--a2ui-color-error');
+  });
+
+  it('renders error overlay even when surface is absent when debounced error is present', () => {
+    vi.useFakeTimers();
+    bootstrapLitSandbox([dummyCatalog], {elementTagName: 'app-root-error-test'});
+    const attachSpy = vi.spyOn(a2uiBridge, 'attachRenderer');
+
+    const ctor = customElements.get('app-root-error-test');
+    const element = new ctor!();
+    document.body.appendChild(element);
+
+    const config = attachSpy.mock.lastCall![1];
+    config.onError!(new Error('Lit syntax error'));
+
+    vi.advanceTimersByTime(350);
+
+    const rendered = element.render() as unknown as TemplateResult;
+    const errorSubTemplate = rendered.values.find(
+      v => typeof v === 'object' && v !== null && 'strings' in v,
+    ) as TemplateResult | undefined;
+    expect(errorSubTemplate?.strings.join('')).toContain('error-overlay');
+    expect(errorSubTemplate?.strings.join('')).toContain('JSON Preview Error');
+
+    element.remove();
+    vi.useRealTimers();
+  });
+
+  it('renders the surface host without viewport-coupled sizing', async () => {
+    bootstrapLitSandbox([dummyCatalog], {elementTagName: 'app-root-host-sizing-test'});
+
+    const ctor = customElements.get('app-root-host-sizing-test');
+    const element = new ctor!() as HTMLElement & {
+      surface: unknown;
+      updateComplete: Promise<boolean>;
+    };
+    document.body.appendChild(element);
+
+    // Render the surface-present branch. Its markup comes from a template
+    // literal, which the static stylesheet assertion above cannot see and no
+    // sample-side guard reads, so it is the one place viewport sizing could
+    // reappear unnoticed. The stub carries only what a2ui-surface reads while
+    // updating.
+    element.surface = {
+      componentsModel: {
+        get: () => undefined,
+        onCreated: {subscribe: () => ({unsubscribe: () => {}})},
+      },
+    };
+    await element.updateComplete;
+
+    const markup = element.shadowRoot!.innerHTML;
+    expect(markup).toContain('<main>');
+    expect(markup).not.toMatch(VIEWPORT_UNIT);
+    expect(markup).not.toMatch(FULL_HEIGHT);
+
+    element.remove();
+  });
+});

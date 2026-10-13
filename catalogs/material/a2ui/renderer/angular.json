@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "projects": {
+    "renderer": {
+      "projectType": "application",
+      "root": "",
+      "sourceRoot": "src",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:application",
+          "options": {
+            "outputPath": "dist/renderer",
+            "browser": "src/main.ts",
+            "index": "src/index.html",
+            "tsConfig": "tsconfig.json",
+            "baseHref": "./",
+            "assets": [{ "glob": "**/*", "input": "public", "output": "/" }],
+            "styles": ["src/styles.scss"]
+          }
+        },
+        "serve": {
+          "builder": "@angular/build:dev-server",
+          "options": { "buildTarget": "renderer:build", "port": 3456 }
+        }
+      }
+    }
+  },
+  "cli": { "analytics": false }
+}

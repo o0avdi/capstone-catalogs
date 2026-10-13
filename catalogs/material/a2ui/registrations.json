@@ -1,0 +1,37 @@
+[
+  {
+    "name": "FinanceMetricCard",
+    "story": "src/stories/finance/metric-card.stories.ts",
+    "source": "src/app/finance/components/metric-card.component.ts",
+    "className": "MetricCardComponent",
+    "adapter": "MetricCardAdapter",
+    "bindings": [
+      "label",
+      "value",
+      "format",
+      "currency",
+      "locale",
+      "subtitle",
+      "change",
+      "changeFormat",
+      "helper",
+      "icon",
+      "state"
+    ],
+    "files": [
+      "src/app/finance/components/metric-card.component.ts",
+      "src/app/finance/finance.types.ts",
+      "src/app/finance/shared/format-value.ts"
+    ]
+  },
+  {
+    "name": "MaterialButton",
+    "story": "src/stories/material/button.stories.ts",
+    "typeName": "ButtonArgs",
+    "adapter": "ButtonAdapter",
+    "bindings": ["label", "disabled", "appearance"],
+    "content": { "label": "projected text" },
+    "events": { "click": "action" },
+    "files": []
+  }
+]

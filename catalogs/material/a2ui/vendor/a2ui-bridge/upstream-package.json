@@ -1,0 +1,77 @@
+{
+  "name": "a2ui-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./lit": {
+      "types": "./dist/lit/index.d.ts",
+      "default": "./dist/lit/index.js"
+    },
+    "./angular": {
+      "types": "./dist/angular/index.d.ts",
+      "default": "./dist/angular/index.js"
+    },
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "default": "./dist/react/index.js"
+    }
+  },
+  "scripts": {
+    "build": "yarn lint && esbuild src/index.ts src/preview-bridge.ts src/lit/lit-bridge.ts src/angular/angular-bridge.ts src/react/react-bridge.ts src/lit/index.ts src/angular/index.ts src/react/index.ts --bundle --format=esm --target=es2022 --outdir=dist --tsconfig=tsconfig.bridge.json --external:lit --external:@lit/context '--external:@angular/*' '--external:@a2ui/*' '--external:react' '--external:react-dom' --external:../preview-bridge.js --external:../index.js && tsc --project tsconfig.bridge.json --emitDeclarationOnly",
+    "clean": "rm -rf dist",
+    "test": "NODE_ENV=test vitest run --coverage",
+    "prettier": "prettier --ignore-path ../.prettierignore --write . | grep -v '(unchanged)'",
+    "prettier:check": "prettier --ignore-path ../.prettierignore --check .",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@a2ui/web_core": "0.10.5",
+    "@modelcontextprotocol/sdk": "1.30.0",
+    "jmespath": "0.16.0",
+    "re2js": "2.8.6",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@angular/core": "22.0.7",
+    "@lit/context": "1.1.6",
+    "@types/jmespath": "0.15.2",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "@vitest/coverage-v8": "4.1.11",
+    "esbuild": "0.28.1",
+    "eslint": "10.7.0",
+    "jsdom": "29.1.1",
+    "lit": "3.3.3",
+    "prettier": "3.9.6",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.65.0",
+    "vitest": "4.1.11"
+  },
+  "peerDependencies": {
+    "@angular/core": "22.0.7",
+    "lit": "3.3.3",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "peerDependenciesMeta": {
+    "@angular/core": {
+      "optional": true
+    },
+    "lit": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    }
+  }
+}
