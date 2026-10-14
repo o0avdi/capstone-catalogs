@@ -61,6 +61,8 @@ function typeSchema(type, checker, context) {
     const schemas = type.types
       .filter((t) => !(t.flags & ts.TypeFlags.Undefined))
       .map((t) => typeSchema(t, checker, context));
+    if (schemas.length === 2 && schemas.every((s) => s.type === 'boolean'))
+      return { type: 'boolean' };
     if (schemas.every((s) => 'const' in s))
       return { type: typeof schemas[0].const, enum: schemas.map((s) => s.const) };
     const types = [...new Set(schemas.map((s) => s.type))];
@@ -81,12 +83,45 @@ function typeSchema(type, checker, context) {
 }
 export function extract(root, registrations, index) {
   for (const r of registrations) {
-    if (!['MetricCardAdapter', 'ButtonAdapter'].includes(r.adapter))
+    if (
+      !/^[A-Za-z_$][\w$]*$/.test(r.adapter) ||
+      !r.adapterFile ||
+      !fs.existsSync(path.join(root, r.adapterFile))
+    )
       throw new Error(r.name + ': missing supported adapter mapping ' + r.adapter);
-    for (const file of [r.story, r.source, ...r.files].filter(Boolean)) {
+    for (const file of [
+      r.story,
+      r.source,
+      r.adapterFile,
+      r.fixturesFile,
+      r.adapterOutput,
+      ...(r.publicExports ?? []),
+      ...(r.assets ?? []).flatMap((a) => [a.source, a.output]),
+      ...r.files,
+    ].filter(Boolean)) {
       if (path.isAbsolute(file) || file.split(/[\\/]/).includes('..'))
         throw new Error(r.name + ': source paths must be relative and inside the project: ' + file);
     }
+    if (
+      !r.fixturesFile ||
+      !fs.existsSync(path.join(root, r.fixturesFile)) ||
+      !r.adapterOutput?.startsWith('src/adapters/')
+    )
+      throw new Error(r.name + ': missing adapter output or fixture file mapping');
+    const adapter = ts.createSourceFile(
+      r.adapterFile,
+      fs.readFileSync(path.join(root, r.adapterFile), 'utf8'),
+      ts.ScriptTarget.Latest,
+    );
+    if (
+      !adapter.statements.some(
+        (s) =>
+          ts.isClassDeclaration(s) &&
+          s.name?.text === r.adapter &&
+          s.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword),
+      )
+    )
+      throw new Error(r.name + ': adapter file must export ' + r.adapter);
     if (r.source && !r.files.includes(r.source))
       throw new Error(r.name + ': component source missing from file allowlist');
     for (const file of r.files) {
@@ -111,6 +146,8 @@ export function extract(root, registrations, index) {
   const selected = discover(index, registrations);
   if (new Set(selected.map((r) => r.name)).size !== selected.length)
     throw new Error('Component identity collision in registrations.');
+  if (new Set(selected.map((r) => r.adapterOutput)).size !== selected.length)
+    throw new Error('Adapter output collision in registrations');
   const program = ts.createProgram(
     selected.flatMap((r) => [r.story, r.source].filter(Boolean).map((f) => path.join(root, f))),
     { experimentalDecorators: true, strictNullChecks: true, target: ts.ScriptTarget.ES2022 },
@@ -128,7 +165,44 @@ export function extract(root, registrations, index) {
       const n = property(node, key);
       return n ? literal(n, `${r.story}:${key}`) : undefined;
     };
-    const args = read(meta, 'args') ?? {};
+    const callbackMappings = r.callbacks ?? {};
+    const readArgs = (node) => {
+      const value = property(node, 'args');
+      if (!value) return {};
+      const object = unwrap(value);
+      if (!ts.isObjectLiteralExpression(object))
+        throw new Error(r.name + ': args must be declarative object literals');
+      const result = {};
+      for (const p of object.properties) {
+        if (!ts.isPropertyAssignment(p))
+          throw new Error(r.name + ': unsupported spread/shorthand args');
+        const name = p.name.getText().replace(/^['"]|['"]$/g, '');
+        const mapping = callbackMappings[name];
+        if (mapping) {
+          const expression = p.initializer.getText();
+          // Registered Storybook spies are provenance only. Never execute callbacks.
+          const spyImport = story.statements.some(
+            (s) =>
+              ts.isImportDeclaration(s) &&
+              s.moduleSpecifier.text === 'storybook/test' &&
+              s.importClause?.namedBindings?.elements?.some(
+                (e) => e.name.text === 'fn' && !e.propertyName,
+              ),
+          );
+          if (mapping.exampleExpression !== 'fn()' || expression !== 'fn()' || !spyImport)
+            throw new Error(
+              r.name +
+                '.' +
+                name +
+                ': unsupported callback expression ' +
+                expression +
+                '; only explicitly mapped Storybook fn() spies are supported',
+            );
+        } else result[name] = literal(p.initializer, r.story + ':args.' + name);
+      }
+      return result;
+    };
+    const args = readArgs(meta);
     const argTypes = read(meta, 'argTypes') ?? {};
     const params = read(meta, 'parameters') ?? {};
     const file = r.source ? program.getSourceFile(path.join(root, r.source)) : story;
@@ -145,16 +219,78 @@ export function extract(root, registrations, index) {
             ts.getDecorators(n)?.some((d) => d.expression.getText().startsWith('Input(')),
         )
       : declaration.type.members;
-    const fields = members.map((m) => {
+    const callbacks = [];
+    const inputMembers = members.filter((m) => {
+      const name = m.name.getText();
+      const mapping = callbackMappings[name];
+      const type = checker.getTypeAtLocation(m);
+      const signatures = type.getCallSignatures();
+      if (!mapping) {
+        if (signatures.length)
+          throw new Error(
+            r.name + '.' + name + ': unsupported callback; register its event mapping explicitly',
+          );
+        return true;
+      }
+      if (signatures.length !== 1)
+        throw new Error(r.name + '.' + name + ': expected one callback signature');
+      const signature = signatures[0];
+      const parameters = signature.parameters.map((parameter) => ({
+        name: parameter.name,
+        schema: typeSchema(
+          checker.getTypeOfSymbolAtLocation(parameter, m),
+          checker,
+          r.name + '.' + name,
+        ),
+      }));
+      if (
+        checker.typeToString(signature.getReturnType()) !== 'void' ||
+        JSON.stringify(parameters) !== JSON.stringify(mapping.parameters)
+      )
+        throw new Error(
+          r.name + '.' + name + ': callback signature conflicts with registered mapping',
+        );
+      if (
+        r.events?.[mapping.event] !== mapping.property ||
+        !mapping.payload ||
+        Object.keys(mapping.payload).length !== parameters.length ||
+        parameters.some((p) => mapping.payload[p.name] !== '$event.' + p.name)
+      )
+        throw new Error(r.name + '.' + name + ': missing callback event/payload mapping');
+      callbacks.push({
+        name,
+        parameters,
+        event: mapping.event,
+        property: mapping.property,
+        payload: mapping.payload,
+        exampleExpression: mapping.exampleExpression,
+        modelUpdate: mapping.modelUpdate,
+      });
+      return false;
+    });
+    for (const name of Object.keys(callbackMappings))
+      if (!callbacks.some((c) => c.name === name))
+        throw new Error(r.name + '.' + name + ': callback mapping missing from source');
+    const fields = inputMembers.map((m) => {
       const name = m.name.getText();
       if (!r.bindings.includes(name))
         throw new Error(`${r.name}.${name}: missing binding/adapter mapping.`);
-      if(r.source) {
-        const input=ts.getDecorators(m).find(d=>d.expression.getText().startsWith('Input(')).expression;
-        if(input.arguments.length>1)throw new Error(r.name+'.'+name+': unsupported Input arguments');
-        if(input.arguments[0]) {
-          const options=literal(input.arguments[0],r.name+'.'+name+' Input');
-          if(!options||typeof options!=='object'||Object.keys(options).some(k=>k!=='required'))throw new Error(r.name+'.'+name+': unsupported Input alias/transform; add an explicit mapping');
+      if (r.source) {
+        const input = ts
+          .getDecorators(m)
+          .find((d) => d.expression.getText().startsWith('Input(')).expression;
+        if (input.arguments.length > 1)
+          throw new Error(r.name + '.' + name + ': unsupported Input arguments');
+        if (input.arguments[0]) {
+          const options = literal(input.arguments[0], r.name + '.' + name + ' Input');
+          if (
+            !options ||
+            typeof options !== 'object' ||
+            Object.keys(options).some((k) => k !== 'required')
+          )
+            throw new Error(
+              r.name + '.' + name + ': unsupported Input alias/transform; add an explicit mapping',
+            );
         }
       }
       const type = checker.getTypeAtLocation(m);
@@ -193,11 +329,15 @@ export function extract(root, registrations, index) {
           d.initializer &&
           ts.isObjectLiteralExpression(unwrap(d.initializer)),
       )
-      .map((d) => ({ name: d.name.getText(), props: { ...args, ...read(d.initializer, 'args') } }));
-    const unmapped=r.bindings.filter(name=>!fields.some(f=>f.name===name));
-    if(unmapped.length)throw new Error(r.name+': registered fields missing from source: '+unmapped.join(', '));
-    if(!examples.length)throw new Error(r.name+': no declarative exported story examples');
-    for(const example of examples)for(const name of Object.keys(example.props))if(!fields.some(f=>f.name===name))throw new Error(r.name+'.'+name+': unsupported story arg; add an explicit mapping');
+      .map((d) => ({ name: d.name.getText(), props: { ...args, ...readArgs(d.initializer) } }));
+    const unmapped = r.bindings.filter((name) => !fields.some((f) => f.name === name));
+    if (unmapped.length)
+      throw new Error(r.name + ': registered fields missing from source: ' + unmapped.join(', '));
+    if (!examples.length) throw new Error(r.name + ': no declarative exported story examples');
+    for (const example of examples)
+      for (const name of Object.keys(example.props))
+        if (!fields.some((f) => f.name === name))
+          throw new Error(r.name + '.' + name + ': unsupported story arg; add an explicit mapping');
     const warnings = fields
       .filter((f) => argTypes[f.name]?.control === 'number' && Array.isArray(f.schema.type))
       .map(
@@ -211,13 +351,14 @@ export function extract(root, registrations, index) {
         params.docs?.description?.component ??
         `${read(meta, 'title')} exported from declarative CSF and source types.`,
       fields,
+      callbacks,
       examples,
       warnings,
     };
   });
 }
 export function makeCatalog(components) {
-  if(!components.length)throw new Error("No supported components registered");
+  if (!components.length) throw new Error('No supported components registered');
   const definitions = {
     common_types_ComponentCommon: {
       type: 'object',
@@ -259,9 +400,10 @@ export function makeCatalog(components) {
         properties[f.name] = {
           anyOf: [f.schema, { $ref: '#/$defs/common_types_DataBinding' }],
           ...(f.schema.description ? { description: f.schema.description } : {}),
-          ...('default' in f.schema ? {default:f.schema.default} : {}),
+          ...('default' in f.schema ? { default: f.schema.default } : {}),
         };
-      if (c.events) properties.action = { $ref: '#/$defs/catalog_EventAction' };
+      for (const property of new Set(Object.values(c.events ?? {})))
+        properties[property] = { $ref: '#/$defs/catalog_EventAction' };
       return [
         c.name,
         {
@@ -276,7 +418,7 @@ export function makeCatalog(components) {
               required: [
                 'component',
                 ...c.fields.filter((f) => f.required).map((f) => f.name),
-                ...(c.events ? ['action'] : []),
+                ...new Set(Object.values(c.events ?? {})),
               ],
             },
           ],

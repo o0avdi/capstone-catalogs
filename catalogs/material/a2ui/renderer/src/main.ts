@@ -6,29 +6,28 @@ import { ExportCatalog } from './adapters';
 import { ValidatingRenderer } from './validating-renderer';
 import catalog from '../public/catalog.json';
 import fixtures from '../public/fixtures.json';
+import demo from '../public/demo.json';
 import usages from '../public/usages.json';
 
 @Component({
   selector: 'app-root',
   standalone: true,
   imports: [SurfaceComponent],
-  template: ` <main>
+  template: `<main>
     @if (standalone) {
-      <h1>Storybook ? A2UI portable export</h1>
+      <h1>Storybook to A2UI portable export</h1>
       <nav>
-        <button (click)="load('metricLiteral')">Literal metric</button
-        ><button (click)="load('metricBound')">Bound metric</button
-        ><button (click)="update()">Update revenue</button>
-        @if (hasButton) {
-          <button (click)="load('button')">Enabled button</button
-          ><button (click)="load('buttonDisabled')">Disabled button</button>
+        @for (item of menu; track item.name) {
+          <button [attr.data-fixture]="item.name" (click)="load(item.name)">
+            {{ item.label }}
+          </button>
         }
       </nav>
     }
     @if (sandbox.surfaceId()) {
       <a2ui-v09-surface [surfaceId]="sandbox.surfaceId()" />
     }
-    @if (standalone && hasButton) {
+    @if (standalone) {
       <section>
         <h2>Dispatched actions</h2>
         <pre id="actions">{{ actions() }}</pre>
@@ -43,26 +42,17 @@ class App {
   readonly sandbox = inject(A2uiSandboxConnection);
   readonly renderer = inject(A2uiRendererService);
   readonly standalone = window.parent === window;
-  readonly hasButton = 'MaterialButton' in catalog.components;
+  readonly menu = demo;
   readonly actions = signal('');
   constructor() {
     this.renderer.surfaceGroup.onAction.subscribe((action) =>
       this.actions.update((v) => v + JSON.stringify(action) + '\n'),
     );
-    if (this.standalone) setTimeout(() => this.load('metricLiteral'), 100);
+    if (this.standalone && this.menu.length) setTimeout(() => this.load(this.menu[0].name), 100);
   }
   load(name: string) {
     window.postMessage(
       { type: 'RENDER_A2UI', payload: (fixtures as Record<string, unknown>)[name] },
-      window.location.origin,
-    );
-  }
-  update() {
-    window.postMessage(
-      {
-        type: 'DATA_MODEL_CHANGE',
-        payload: { updateDataModel: { surfaceId: 'demo', path: '/revenue', value: 1750000 } },
-      },
       window.location.origin,
     );
   }

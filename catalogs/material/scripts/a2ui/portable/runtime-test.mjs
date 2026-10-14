@@ -166,6 +166,25 @@ async function environment(iframe) {
       await wait(100);
       assert.equal(data('SEND_TO_SERVER').length, 1);
     }
+    if(fixtures.checkboxBound){
+      send({type:'RENDER_A2UI',payload:fixtures.checkboxBound});
+      await until(()=>w.document.querySelector('export-material-checkbox input[type=checkbox]'),'bound checkbox');
+      let input=w.document.querySelector('export-material-checkbox input[type=checkbox]');assert.equal(input.checked,false);
+      send({type:'RENDER_A2UI',payload:fixtures.checkboxCheckedUpdate});await until(()=>input.checked,'external checked=true');
+      const before=data('SEND_TO_SERVER').length;input.click();await until(()=>data('SEND_TO_SERVER').length===before+1,'Checkbox change event');
+      const emitted=data('SEND_TO_SERVER').at(-1).payload.action;
+      assert.equal(emitted.name,'checkedChange');assert.equal(emitted.context.checked,false);assert.equal(typeof emitted.context.checked,'boolean');
+      assert.equal(emitted.surfaceId,'demo');assert.equal(emitted.sourceComponentId,'root');assert.equal(emitted.context.source,'portable-export');
+      assert.equal(input.checked,true,'click waits for the host update');
+      assert.equal(data('DATA_MODEL_CHANGE').at(-1).payload.updateDataModel.value.includeArchived,true,'click must not mutate data model');
+      send({type:'RENDER_A2UI',payload:fixtures.checkboxUncheckedUpdate});await until(()=>!input.checked,'host checked=false');
+      input.click();await until(()=>data('SEND_TO_SERVER').length===before+2,'Checkbox true event');
+      assert.equal(data('SEND_TO_SERVER').at(-1).payload.action.context.checked,true);assert.equal(input.checked,false,'host-owned false stays authoritative');
+      send({type:'RENDER_A2UI',payload:fixtures.checkboxDisabled});await wait(300);
+      input=w.document.querySelector('export-material-checkbox input[type=checkbox]');assert.equal(input.disabled,true);assert.equal(input.checked,true);
+      const count=data('SEND_TO_SERVER').length;input.click();await wait(150);assert.equal(data('SEND_TO_SERVER').length,count);
+      console.log('PASS Checkbox: external boolean updates, true/false payloads, host-owned model, disabled no-event.');
+    }
     assert.ok(data('RENDER_SUCCESS').length);
     assert.ok(messages.every((m) => m.origin === 'http://localhost:4200'));
     assert.deepEqual(errors, []);

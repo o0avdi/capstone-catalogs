@@ -1,28 +1,22 @@
 # Portable Angular Storybook export
 
-Requires Node 22.12+ or 24 and npm. From this extracted folder:
+The bundle contains FinanceMetricCard, MaterialButton and MaterialCheckbox, actual selected source/styles/helpers, generated contracts, authored adapters, theme, fixtures/usages, strict runtime validation, a vendored Composer bridge and its license, and a tested dependency lockfile.
+
+From this extracted folder (Node 22.12+ or 24):
 
     npm.cmd ci --no-audit --no-fund
-    npm.cmd run test:schema
-    npm.cmd run build
-    npm.cmd start
-
-Open http://localhost:3456. Select Bound metric, then Update revenue: $1,340,000 becomes $1,750,000. Enabled button dispatches a save action; disabled button does not.
-
-In the pinned A2UI Composer shell, choose custom renderer http://localhost:3456. Paste the message array from fixtures.json for metricLiteral, then metricBound. Send a DATA_MODEL_CHANGE or edit /revenue in the data model. Paste button, click Save changes, and inspect the event log. Paste buttonDisabled and verify no event. No API key is needed.
-
-catalog.json and metadata.json are generated from selected CSF metadata and TypeScript source inputs. Source styles and formatting helpers are included. src/adapters.ts maps all exported properties through reactive A2UI BoundProperty signals. Button label is projected text, appearance binds matButton, and click dispatches an event action after checking disabled.
-
-Only path bindings and event actions with scalar literal context are advertised. No custom functions, generic template interpretation, React stories, or layout/common properties beyond id are exported. Empty function support is represented by a false schema. Story args are examples; optional component initializers provide documented API defaults. The explicit registration allowlist controls source packaging.
-
-The upstream Composer bridge is vendored under vendor/a2ui-bridge with Apache-2.0 license, source, built JavaScript and original package metadata. See provenance.json. Angular 21 is used only for this renderer to satisfy pinned A2UI peers; original Storybook stays on Angular 22. Source code and public exports travel with this folder. No sibling checkout is required.
-
-The included checks run without Composer or an API key:
-
     npm.cmd run test:portable
     npm.cmd run test:schema
+    npm.cmd run build
     npm.cmd run test:runtime
+    npm.cmd start
 
-Run build before test:runtime. Runtime tests execute the production AOT bundle in jsdom with standalone and emulated parent-frame transports. They verify reactive values, action dispatch, disabled behavior, catalog/usages exchange, origin checks, and invalid messages. They do not verify actual browser layout or the real Composer shell.
+Open http://localhost:3456. Use the generated fixture menu to show literal/bound metrics, update revenue, enabled/disabled buttons, and literal/bound/disabled checkboxes. Checkbox clicks emit checkedChange with context.checked as the new boolean. The host owns data: the checkbox stays on the current value until the host applies the change. Use Host sets checked and Host clears checked to simulate deterministic host updates.
 
-Individual fixed message arrays are also served at /fixtures/metricLiteral.json, /fixtures/metricBound.json, /fixtures/button.json, /fixtures/buttonDisabled.json and /fixtures/revenueUpdate.json. Custom theme messages and partial component property updates are outside this bounded MVP; send full component instances. Optional source defaults apply when a property is omitted. A referenced binding must resolve to its declared source type when the message batch completes.
+In Composer select this renderer's URL and paste the arrays served at /fixtures/metricLiteral.json, /fixtures/metricBound.json, /fixtures/button.json, /fixtures/buttonDisabled.json, /fixtures/checkboxBound.json and /fixtures/checkboxDisabled.json. Edit /revenue or /includeArchived in Data Model while keeping the components bound. Observe actions in Events. No API key or LLM is needed.
+
+The catalog/schema and examples are generated from live TypeScript source and supported CSF literals. Controls do not narrow source types. Story args are examples, not API defaults. The registration-and-adapter workflow is documented in ADDING_COMPONENTS.md; component-specific adapters and fixture configurations are retained in provenance.
+
+Only typed literal/path bindings and named event actions with scalar context are supported. There are no custom functions, common layout/accessibility/check properties beyond id, custom theme messages, partial component updates, or arbitrary template/callback execution. Registered Storybook fn() callback spies are diagnosed/mapped as metadata and never executed or serialized as inputs. Runtime tests load the actual production ES module graph in jsdom; actual Composer browser results are recorded in the source repository docs/SETUP_STATUS.md; browser screenshots are retained locally.
+
+Angular 21.2.17/Material 21.2.14 satisfy pinned A2UI peers; original Storybook remains on Angular 22 with its original lockfile. @a2ui/markdown-it 0.1.0 is included for real dev-server startup. The private upstream bridge is vendored under vendor/a2ui-bridge; no sibling or original-checkout dependencies are required. See provenance.json and licenses/.

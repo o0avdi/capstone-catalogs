@@ -38,11 +38,3 @@ pre {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
-
-// Keep the disabled label readable while preserving a muted neutral container.
-export-material-button {
-  @include mat.button-overrides((
-    filled-disabled-container-color: var(--mat-sys-surface-container-high),
-    filled-disabled-label-text-color: var(--mat-sys-on-surface-variant),
-  ));
-}

@@ -17,3 +17,8 @@ const metric={id:'root',component:'FinanceMetricCard',label:'Revenue',value:42};
 for(const instance of [{...metric,value:'Legacy formatted value'},{...metric,value:{path:'/revenue'}}])if(!validate(instance))throw new Error('Valid union/binding failed');
 for(const instance of [{...metric,id:''},{...metric,value:true},{...metric,state:'unknown'},{...metric,unknown:true},{id:'root',component:'FinanceMetricCard',label:'Missing value'}])if(validate(instance))throw new Error('Invalid component unexpectedly passed: '+JSON.stringify(instance));
 console.log('Draft 2020-12: missing required, empty id, wrong type/enum and unknown properties rejected.');
+
+if(c.components.MaterialCheckbox){const checkbox={id:'root',component:'MaterialCheckbox',label:'Archive',checked:false,disabled:false,action:{event:{name:'checkedChange'}}};
+ for(const instance of [checkbox,{...checkbox,checked:true},{...checkbox,checked:{path:'/includeArchived'}}])if(!validate(instance))throw new Error('Valid checkbox failed');
+ for(const value of ['true',1,null])if(validate({...checkbox,checked:value}))throw new Error('Invalid checked type passed');
+ console.log('Draft 2020-12: Checkbox booleans and path binding pass; string/number/null checked values fail.');}

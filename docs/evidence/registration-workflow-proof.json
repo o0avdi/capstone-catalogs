@@ -1,0 +1,36 @@
+{
+  "checkpoint": "d2ea8ab",
+  "beforeComponents": [
+    "FinanceMetricCard",
+    "MaterialButton"
+  ],
+  "beforeAddingCheckbox": {
+    "catalogs/material/scripts/a2ui/export.mjs": "c80cb88852e0f057e945ec01412bd0871567fbaf276abbdf92f99d3bbb7535c0",
+    "catalogs/material/scripts/a2ui/metadata.mjs": "523f5335f616965521397bc027feac94e16d7a48061736b0c09944e454174cdb",
+    "catalogs/material/scripts/a2ui/component-files.mjs": "f0d46b253a4a6cb9b00a4c2eb797e69cbf6e0ed39fbdefed8f94af8229556df5",
+    "catalogs/material/scripts/a2ui/zip.mjs": "0fc0cba7029b447c1bf29a4481a609a9867ee28c7697ed6a229ffb13c71792ca",
+    "catalogs/material/a2ui/renderer/src/main.ts": "bb25583573af410c33522a6ed52de03c7cd7dad8a6a377fc3116ebd362f826e0",
+    "catalogs/material/a2ui/renderer/src/validating-renderer.ts": "f11757a88dffe772752f94704221bcf626c5246a2994a31320f28ef68771567e",
+    "catalogs/material/a2ui/renderer/src/styles.scss": "b3772d495b5186621d64768a24b8c3289018bc60b3d8501181f24561d8a2b45e"
+  },
+  "afterAddingCheckbox": {
+    "catalogs/material/scripts/a2ui/export.mjs": "c80cb88852e0f057e945ec01412bd0871567fbaf276abbdf92f99d3bbb7535c0",
+    "catalogs/material/scripts/a2ui/metadata.mjs": "523f5335f616965521397bc027feac94e16d7a48061736b0c09944e454174cdb",
+    "catalogs/material/scripts/a2ui/component-files.mjs": "f0d46b253a4a6cb9b00a4c2eb797e69cbf6e0ed39fbdefed8f94af8229556df5",
+    "catalogs/material/scripts/a2ui/zip.mjs": "0fc0cba7029b447c1bf29a4481a609a9867ee28c7697ed6a229ffb13c71792ca",
+    "catalogs/material/a2ui/renderer/src/main.ts": "bb25583573af410c33522a6ed52de03c7cd7dad8a6a377fc3116ebd362f826e0",
+    "catalogs/material/a2ui/renderer/src/validating-renderer.ts": "f11757a88dffe772752f94704221bcf626c5246a2994a31320f28ef68771567e",
+    "catalogs/material/a2ui/renderer/src/styles.scss": "b3772d495b5186621d64768a24b8c3289018bc60b3d8501181f24561d8a2b45e"
+  },
+  "identical": true,
+  "afterComponents": [
+    "FinanceMetricCard",
+    "MaterialButton",
+    "MaterialCheckbox"
+  ],
+  "componentFiles": [
+    "catalogs/material/a2ui/registrations.json",
+    "catalogs/material/a2ui/components/checkbox/adapter.ts",
+    "catalogs/material/a2ui/components/checkbox/fixtures.json"
+  ]
+}

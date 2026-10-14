@@ -4,10 +4,10 @@ Prepared October 12, 2026 for the Storybook -> A2UI export MVP. The exporter and
 
 ## Checkouts and tools
 
-- Implementation: `C:\Users\omara\repos\bacs496\storybook-a2ui-mvp\capstone-catalogs`
+- Implementation: `<repository>`
 - Feature branch: `feat/storybook-a2ui-export-mvp`
 - Source baseline: `753759f38a0f9d259ec75a4d3417da1b96fd9c87`
-- Composer reference: `C:\Users\omara\repos\bacs496\storybook-a2ui-mvp\composer`
+- Composer reference: `../composer`
 - Composer baseline: `8155592d3522fff213188e8382153e473e2c3315`
 - Node v24.20.0, npm 11.19.0, Git 2.50.0.windows.2, Composer Yarn 4.5.0 through Corepack.
 - Existing user checkouts were left untouched, including their uncommitted work.
@@ -43,19 +43,19 @@ Each command runs in its own terminal. No servers are left running by setup.
 
 Angular Storybook on port 6006:
 
-    Set-Location 'C:\Users\omara\repos\bacs496\storybook-a2ui-mvp\capstone-catalogs\catalogs\material'
+    Set-Location '<repository>\catalogs\material'
     npm.cmd run storybook:material
 
 This uses the Angular-only script. The generic storybook script can start the composed React catalog too, which the MVP does not require.
 
 Composer's upstream Angular sample on port 3456:
 
-    Set-Location 'C:\Users\omara\repos\bacs496\storybook-a2ui-mvp\composer'
+    Set-Location '../composer'
     corepack.cmd yarn workspace ng-basic-catalog start
 
 Composer shell on port 4200, without invoking builds of all sample frameworks:
 
-    Set-Location 'C:\Users\omara\repos\bacs496\storybook-a2ui-mvp\composer'
+    Set-Location '../composer'
     corepack.cmd yarn workspace a2ui-composer-shell exec ng serve --host localhost --port 4200
 
 Use Composer's custom renderer URL http://localhost:3456 for the upstream Angular sample. Replace it with the exported renderer URL during implementation. The Lit and React sample builds are not part of this setup. Fixed A2UI messages, not LLM calls, should drive acceptance.
@@ -90,7 +90,7 @@ No application source in Storybook or the sibling Composer was modified, and no 
 
 ### Clean archive run � October 12, 2026 Eastern
 
-- Fresh ZIP extraction outside the checkout: C:\Users\omara\AppData\Local\Temp\a2ui-mvp-final-2af9151cc4ae438bb170113fbf3257f1.
+- Fresh ZIP extraction outside the checkout: <temporary-directory>/a2ui-mvp-final-2af9151cc4ae438bb170113fbf3257f1.
 - `npm.cmd ci --no-audit --no-fund` passed, 461 packages installed from the bundled lockfile without forced/legacy peers or external workspace links.
 - `npm.cmd run test:portable` passed: 109 manifest files; no node_modules, machine/sibling dependency paths, missing required files or credential patterns.
 - `npm.cmd run test:schema` passed valid fixtures and negative cases for missing required fields, empty ids, wrong types/enums and unknown properties.
@@ -123,7 +123,7 @@ Current archive SHA-256: 582702CD15670FA386A4E12115D30D968FBC02889CE4F190899BE30
 
 Remaining real Composer acceptance: bound revenue update, enabled Button event, disabled Button behavior, and recording. These checks are still pending; literal rendering alone does not complete every acceptance item.
 
-Updated archive clean extraction passed: C:\Users\omara\AppData\Local\Temp\a2ui-startup-fixed-994ffba4e0604d4caa0ff67398e610f1. npm ci installed 470 packages from the bundled lockfile. The 109-file portable audit, production build, standalone DOM suite and parent-frame protocol suite all passed. The original extracted renderer remains serving at localhost:3456; this second extraction was used only for validation.
+Updated archive clean extraction passed: <temporary-directory>/a2ui-startup-fixed-994ffba4e0604d4caa0ff67398e610f1. npm ci installed 470 packages from the bundled lockfile. The 109-file portable audit, production build, standalone DOM suite and parent-frame protocol suite all passed. The original extracted renderer remains serving at localhost:3456; this second extraction was used only for validation.
 
 ### Required browser acceptance passed; disabled contrast fix - October 12, 2026 Eastern
 
@@ -143,3 +143,83 @@ After the contrast fix, the production renderer build and both runtime suites (s
 ### Local checkpoint - October 13, 2026 Eastern
 
 Reviewed the source extractor, strict runtime guard, portable module test loader, markdown dependency and disabled-button theme correction. Required two-component Composer browser acceptance has passed; the earlier pending-browser sections above are historical. Preserved the known-good ZIP separately at artifacts/two-component-known-good-C0532F49.zip, SHA-256 C0532F49379FF59E8626C8D7997397C5F6180790EC766B92E65FE98473A01E4D. Artifacts and generated exports/builds/caches/node_modules are excluded from Git. The vendored Composer bridge distribution and license are intentional runtime inputs to the portable package.
+
+### Three-component automated validation - October 13, 2026 Eastern
+
+- Local checkpoint d2ea8ab contains the browser-verified two-component MVP, markdown dependency, ES module test fix and theme fix. Known-good C0532F49 ZIP is preserved under artifacts and excluded from Git.
+- Refactored two-component extraction/schema tests passed (8/8), and its portable production build passed before enabling Checkbox. Per-component adapters and fixture configurations replaced exporter branches and hard-coded demo messages; Button's scoped disabled theme styles now ship with its adapter.
+- Checkbox was enabled through registration, adapter.ts and fixtures.json. Shared workflow hashes before/after are identical; proof is docs/evidence/registration-workflow-proof.json and a regression test.
+- All 11 source/schema tests passed, including Checkbox boolean validation, external path schemas, explicit callback metadata, unsupported spy/arrow expressions, signature conflicts, and generating two vs three components from identical shared logic.
+- Three-component production/runtime suites passed: Metric literal/bound/data update, Button action/disabled, Checkbox external true/false updates, boolean event payloads, source/root/surface context, host-owned data, disabled no-event, bridge handshake/usages/origin validation and invalid-message diagnostics.
+- Pinned Composer CatalogSchemaResolver parsed all three generated schemas and required fields without warnings.
+- Final clean ZIP extraction: docs/evidence/three-component-clean-location.txt. npm ci installed 470 packages without peer forcing. Portability audit passed for 134 files. Draft 2020-12 positive/negative checks passed. Production build passed (801.90 kB initial raw, 179.72 kB estimated transfer, plus lazy markdown). Both ES-module/jsdom suites passed in the clean extraction.
+- Clean extraction serves on localhost:3457 for actual Composer checks. HTML/main.js/catalog/Checkbox fixture endpoints return HTTP 200. Original known-good server on 3456 remains untouched.
+- Actual three-component Composer browser results will be recorded after the remaining checks; emulation/build results alone are not browser acceptance.
+
+### Actual three-component Composer acceptance complete - October 13, 2026 Eastern
+
+Verified the real Chrome Composer shell at localhost:4200 against the clean extracted renderer at localhost:3457 through the computer-use skill. All payloads were fixed fixtures; no API key or LLM call was used.
+
+- Bound Checkbox rendered Include archived transactions. Clicking false emitted checkedChange with boolean checked:true, surfaceId demo, sourceComponentId root and context.source portable-export. The model and control stayed false until the host applied an update.
+- Editing Data Model to {"includeArchived":true} checked the same bound control without changing its component definition. Clicking it emitted checked:false while the model/control stayed true. Editing externally to false cleared it again.
+- Disabled checked Checkbox had native disabled semantics. Clicking it did not add an event: checkedChange rows remained 2 before/after.
+- Metric Card regression passed in the same renderer: $1,340,000 became $1,750,000 through an external /revenue change. Source styles, formatting and comparison content remained present.
+- Enabled Button added exactly one save event (save rows 4 -> 5) with demo/root/portable-export context. After a credit-limit interruption and browser reload, the final disabled Button fixture rendered with readable neutral theme colors and native disabled semantics; clicking left Events at No events captured yet. The approval failure was a usage-limit review failure, not an unsafe-action determination; the action was not executed until credits reset and fresh UI state was observed.
+- Screenshots: checkbox-true-event-host-owned.png, checkbox-model-unchanged-after-click.png, checkbox-external-true.png, checkbox-external-false.png, checkbox-boolean-events.png, checkbox-disabled-no-event.png, three-component-metric-regression.png, three-component-button-event.png, and three-component-disabled-button-no-event.png.
+- Earlier unread Errors badges were present when changing renderers/reloading, before the fixed acceptance fixtures. The final disabled check had no new diagnostic badge; all fixed fixture renders and interactions above succeeded. No upstream source changes were made to suppress diagnostics.
+
+Final source ZIP: catalogs/material/a2ui-three-output.zip. SHA-256 5D2268182382732D94B9B71CC0501A221A820D9B581EC178AC9713C2149B4AAB. The original two-component ZIP and preserved artifact still match C0532F49379FF59E8626C8D7997397C5F6180790EC766B92E65FE98473A01E4D. Shared exporter/renderer hashes remain identical before/after adding Checkbox; proof is registration-workflow-proof.json.
+
+All required work for this three-component task is complete. The local checkpoint commit is d2ea8ab; subsequent workflow/Checkbox changes remain available for review in the working tree. The source Storybook lockfile/framework and immutable catalog fixture remain unchanged. Nothing was pushed, published, deployed or merged. The three-component clean server is still available on 3457; the preserved two-component server remains on 3456. No recording is claimed.
+
+Final review removed a test-only dependency on the old generated a2ui-output/node_modules directory. Source extraction/schema tests now import the existing project-lockfile Ajv 8.20.0 directly, so the documented workflow does not require an installed older export. No package manifest or lockfile change was needed. The portable renderer retains its independently tested Ajv 8.17.1 lockfile. This test-only change does not alter shared exporter hashes or the ZIP bytes.
+The final source-test rerun using the original project-lockfile Ajv passed 11/11. git diff --check passed; the source framework/application files, source lockfile and immutable reference fixture have no changes. Re-exporting produced the identical final three-component ZIP checksum. Generated exports, build output, caches and installed dependencies remain ignored.
+
+### Stabilization verification - October 13, 2026 Eastern
+
+This section records new results after the read-only audit; earlier browser results above remain historical evidence.
+
+Changes: metadata.test.mjs normalizes CRLF to LF before comparing preserved workflow hashes, checks historical before/after equality, verifies both newline variants and detects content changes. Existing subset-generation protection remains. composer-schema-test.mjs now defaults to a2ui-output, matching export:a2ui. The source/shipped extension guides and demo commands pass named output directories explicitly. No shared exporter/runtime/component code or dependency lockfile changed during stabilization.
+
+Commands from catalogs/material:
+
+    npm.cmd run test:a2ui
+    npm.cmd run export:a2ui -- --out a2ui-three-stabilized
+    npm.cmd run test:a2ui:composer -- ../../../composer a2ui-three-stabilized
+    npm.cmd run export:a2ui -- --out a2ui-three-stabilized-repeat
+
+Results: 11/11 source/schema/workflow tests passed. Composer's pinned resolver parsed all three schemas and required fields without warnings. Its first sandbox run failed at esbuild spawn EPERM before assertions; the same command passed with subprocess permission. Both new exports have identical SHA-256 16C6D587C617967B703731036AB1BB6ED431CC0C82CFB46DD6DF7EC3BC487CC9. ZIP integrity passed, with 134 entries; comparison against a2ui-three-output.zip found only ADDING_COMPONENTS.md changed.
+
+Clean extraction: <temporary-directory>/a2ui-stabilization-clean-6dfce33412644274893f049009a56a0c. In that directory:
+
+    npm.cmd ci --no-audit --no-fund --cache .npm-cache --offline=false
+    npm.cmd run test:portable
+    npm.cmd run test:schema
+    npm.cmd run build
+    npm.cmd run test:runtime
+
+All passed: 470 locked packages installed without peer forcing; 134-file portability audit; all fixture instances and negative Draft 2020-12 checks; production build (801.90 kB initial raw, 179.72 kB estimated transfer); standalone AOT DOM and parent-frame suites, including Checkbox external updates, boolean true/false events, host-owned model and disabled no-event behavior. npm reported unapproved install-script warnings; no approval settings were changed, and build/runtime tests succeeded. Node's experimental VM-module warning is expected by the existing runtime harness.
+
+The first install attempt in a separate fresh directory, a2ui-stabilization-f1d9583bfc93451d8f8e58efaf24ebb8, failed with ENOTCACHED because the sandbox enforced only-if-cached access against an empty extraction-local cache; cleanup also reported EPERM. That attempt/log is retained. The second fresh extraction passed with network/subprocess permission. This was an environment failure, not a dependency or component regression.
+
+Actual Composer UI could not be repeated: browser inventory was empty and creating an in-app browser returned "Browser is not available: iab". HTTP probes of localhost:4200 and 3457 also found no responding server. No browser acceptance is newly claimed; all original screenshots and proof JSON remain unchanged. The checkpoint d2ea8ab, both C0532F49 two-component ZIPs, and the original 5D226818 three-component ZIP remain preserved. Nothing was staged, committed or pushed.
+
+The fresh extraction was started with npm.cmd exec -- ng serve --host localhost --port 3458. After the server reported ready, /, /main.js, /catalog.json and /fixtures/checkboxBound.json all returned HTTP 200. An earlier probe during compilation found no listener; retry after readiness passed. The renderer is available on 3458 at handoff. Final git diff --check passed; HEAD remains d2ea8ab, the index is empty, source package manifests/lockfiles/framework and immutable catalog fixture are unchanged. Preserved ZIP hashes were rechecked and still match their original values.
+
+## GitHub feature-branch validation - October 13, 2026 Eastern
+
+User authorization: commit and push the finished three-component exporter to `feat/storybook-a2ui-exporter` on the verified origin `https://github.com/o0avdi/capstone-catalogs.git`. This supersedes the prior no-push task boundary; no deploy, merge, force push or history rewrite is authorized. The user personally verified all three components in actual Composer at localhost:3458 before this task; no new browser run is claimed here.
+
+Commands from catalogs/material:
+
+    npm.cmd run test:a2ui
+    npm.cmd run export:a2ui -- --out a2ui-three-push-check
+    npm.cmd run test:a2ui:composer -- ../../../composer a2ui-three-push-check
+
+Results: 11/11 tests passed, a new three-component folder/ZIP was generated, and the pinned Composer resolver passed all three components without warnings. The resolver initially hit sandbox esbuild spawn EPERM; it passed with subprocess permission.
+
+A first sandbox `npm.cmd ci --offline --no-audit --no-fund` in the new generated folder failed at install-script spawn EPERM and reported cleanup permission errors. A build was started before that install completed and failed on an incomplete Angular CLI installation. This verification attempt is retained locally and is not a source regression or a successful install/build.
+
+The ZIP was then extracted into a fresh external temporary directory. With subprocess permission, `npm.cmd ci --offline --no-audit --no-fund` installed 470 locked packages successfully. Sequential `test:portable`, `test:schema`, `build`, and `test:runtime` all passed: 134-file manifest audit; positive/negative Draft 2020-12 validation; production build (801.90 kB initial raw, 179.72 kB estimated transfer); standalone AOT DOM, Checkbox boolean/host ownership checks and parent-frame protocol suites. Existing npm install-script approval warnings and Node experimental VM-module warnings remain; no package-manager settings changed.
+
+Staged-source credential/personal-path scan found no matches. All registered source files and renderer manifest/lockfile are tracked. README and guides describe reproduction and Composer example locations. Dependency manifests/lockfiles and the immutable reference catalog are unchanged. Both preserved two-component archives retain SHA-256 C0532F49379FF59E8626C8D7997397C5F6180790EC766B92E65FE98473A01E4D. New browser screenshots and the local extraction-location file remain untracked; ZIPs, generated folders, caches and dependencies stay ignored and preserved locally. `git diff --check` and staged whitespace checks passed.

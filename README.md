@@ -1,6 +1,6 @@
 # Capstone Catalogs
 
-Shared Storybook component catalogs for our capstone project. The current catalog demonstrates Angular Material components and their states. We are also investigating how story metadata can support a future A2UI export workflow; this repository does not yet provide that exporter.
+Shared Storybook component catalogs for our capstone project. The current catalog demonstrates Angular Material components and their states. The repository also provides a working, metadata-driven Angular Storybook-to-A2UI exporter supporting FinanceMetricCard, MaterialButton, and MaterialCheckbox.
 
 ## Get started
 
@@ -103,6 +103,54 @@ Run these inside `catalogs/material`:
 - If a checkbox reports a missing accessible label, check whether Controls has overridden its label with an empty string. Reset the story and rerun the check; do not dismiss findings without inspecting them.
 - If an install or build fails, share the actual terminal error and your `node --version` and `npm --version` output. Keep the lockfile intact while diagnosing it.
 
-## Export investigation
+## Angular Storybook-to-A2UI exporter
 
-The observed `storybook-static/index.json` contains story discovery information such as IDs, titles, names, and source references. It does not contain our complete args, component contracts, or Angular template mappings. The current Compodoc component list documents local components, including Storybook starter examples. A future A2UI exporter needs an explicit strategy to combine metadata and map rendering, content, and events.
+The exporter packages a generated JSON Schema catalog, selected component source and styles, Angular adapters, fixed A2UI v0.9 examples, strict runtime validation, and an independently runnable Angular renderer. It supports **FinanceMetricCard**, **MaterialButton**, and **MaterialCheckbox**. The composed React/Shadcn Storybook is excluded. No API key or LLM is needed.
+
+Discovery uses the built Storybook index. A bounded TypeScript extractor reads current source types, required inputs, defaults, descriptions, and declarative CSF metadata. Explicit registrations map inputs, projected content, events, source files, adapters, and fixtures. Unsupported metadata is diagnosed. Generated schema and runtime contracts share that metadata; the reference catalog in `docs/references/` is never used as generated output.
+
+From a fresh clone, run these commands in `catalogs/material` (use `npm` instead of `npm.cmd` outside Windows):
+
+```sh
+npm.cmd ci
+npm.cmd run build-storybook
+npm.cmd run test:a2ui
+npm.cmd run export:a2ui -- --out a2ui-three-release
+```
+
+This creates `a2ui-three-release/` and `a2ui-three-release.zip`. Choose a new output name when preserving a demo artifact: the default `a2ui-output` may contain the known-good two-component export. Generated outputs remain local and are ignored by Git.
+
+Extract the ZIP into a fresh directory outside the source checkout, then run:
+
+```sh
+npm.cmd ci --no-audit --no-fund
+npm.cmd run test:portable
+npm.cmd run test:schema
+npm.cmd run build
+npm.cmd run test:runtime
+npm.cmd exec -- ng serve --host localhost --port 3458
+```
+
+The renderer pins Angular 21/Material 21 for A2UI peer compatibility, while the source Storybook retains Angular 22 and its existing framework. Both dependency lockfiles and the vendored Composer bridge source, distribution, and licenses are committed. The export needs no sibling checkout or source repository at runtime.
+
+### Use with Composer
+
+Use the official `a2ui-project/composer` checkout pinned to `8155592d3522fff213188e8382153e473e2c3315`; follow its setup instructions. From that checkout, start its shell with:
+
+```sh
+corepack.cmd yarn workspace a2ui-composer-shell exec ng serve --host localhost --port 4200
+```
+
+Open `http://localhost:4200`, add/select the custom renderer `http://localhost:3458` in Settings, and paste a generated message array into the raw layout editor. The renderer serves its catalog at `/catalog.json` and examples at `/fixtures/metricLiteral.json`, `/fixtures/metricBound.json`, `/fixtures/button.json`, `/fixtures/buttonDisabled.json`, `/fixtures/checkboxBound.json`, and `/fixtures/checkboxDisabled.json`. These files also live in the exported `fixtures/` directory; aggregate messages are in `fixtures.json`, and story-derived usages are in `public/usages.json`.
+
+With the bound examples, edit `revenue` or `includeArchived` in Composer's Data Model. Observe button and checkbox actions in Events. Checkbox actions carry a boolean `context.checked`; the host owns the model and must apply the proposed value with `updateDataModel`. Clicking alone preserves the authoritative model/display value. Disabled controls emit no event.
+
+The pinned Composer resolver can additionally be checked from `catalogs/material` when Composer is a sibling of this repository:
+
+```sh
+npm.cmd run test:a2ui:composer -- ../../../composer a2ui-three-release
+```
+
+Validated capabilities include 11 extraction/schema/workflow tests, Composer schema resolution, fresh ZIP installation and production build, portability auditing, positive/negative Draft 2020-12 validation, production DOM and parent-frame protocol tests, and actual Composer browser rendering of all three components. The user personally verified the final renderer on port 3458. Tests use fixed messages. Arbitrary templates/callbacks, custom functions, general layout properties, and automatic host model writes are outside the supported contract.
+
+See [demo instructions](docs/DEMO_RECORDING.md), [validation history](docs/SETUP_STATUS.md), and the [registration guide](docs/EXPORT_ANOTHER_COMPONENT.md). Browser screenshots and local extraction-location records are intentionally kept local; no recording is claimed.

@@ -8,7 +8,7 @@ The full demonstration is: existing Storybook -> export command -> portable sour
 
 ## Workspace
 
-The implementation checkout is `C:\Users\omara\repos\bacs496\storybook-a2ui-mvp\capstone-catalogs`, branch `feat/storybook-a2ui-export-mvp`, created from commit `753759f38a0f9d259ec75a4d3417da1b96fd9c87`.
+The implementation checkout is `<repository>`, branch `feat/storybook-a2ui-export-mvp`, created from commit `753759f38a0f9d259ec75a4d3417da1b96fd9c87`.
 
 The sibling `../composer` checkout is the official a2ui-project/composer repository at commit `8155592d3522fff213188e8382153e473e2c3315`. It is a reference and integration test application. Its bridge is a workspace package; do not assume `a2ui-bridge@0.1.0` can simply be installed from the public npm registry. Verify its packaging/distribution approach before generating an independent renderer. If a local bridge artifact is necessary, include that artifact and its license inside the export rather than referring to the sibling checkout.
 
@@ -28,7 +28,7 @@ This machine has Node v24.20.0, npm 11.19.0, Git 2.50.0, and Corepack. Composer 
 - [x] Export Metric Card end to end, including independent source bundle and Composer rendering. Literal rendering and bound revenue updates passed in the real Composer browser UI.
 - [x] Add Material Button with action dispatch. Real Composer enabled save events and disabled no-event behavior passed; disabled readability is improved in light and dark themes.
 - [x] Verify portable packaging and metadata/schema tests: clean external extraction, lockfile install, build, runtime/protocol tests, manifest audit and HTTP checks passed.
-- [x] Prepare recorded demo instructions in docs/DEMO_RECORDING.md. Actual recording/browser acceptance remains pending.
+- [x] Prepare recorded demo instructions in docs/DEMO_RECORDING.md. A recording has not been made; all three-component browser acceptance checks passed.
 
 ## Required components
 
@@ -130,7 +130,7 @@ Current archive SHA-256: 582702CD15670FA386A4E12115D30D968FBC02889CE4F190899BE30
 
 Remaining real Composer acceptance: bound revenue update, enabled Button event, disabled Button behavior, and recording. These checks are still pending; literal rendering alone does not complete every acceptance item.
 
-Updated archive clean extraction passed: C:\Users\omara\AppData\Local\Temp\a2ui-startup-fixed-994ffba4e0604d4caa0ff67398e610f1. npm ci installed 470 packages from the bundled lockfile. The 109-file portable audit, production build, standalone DOM suite and parent-frame protocol suite all passed. The original extracted renderer remains serving at localhost:3456; this second extraction was used only for validation.
+Updated archive clean extraction passed: <temporary-directory>/a2ui-startup-fixed-994ffba4e0604d4caa0ff67398e610f1. npm ci installed 470 packages from the bundled lockfile. The 109-file portable audit, production build, standalone DOM suite and parent-frame protocol suite all passed. The original extracted renderer remains serving at localhost:3456; this second extraction was used only for validation.
 
 ### Required browser acceptance passed; disabled contrast fix - October 12, 2026 Eastern
 
@@ -145,3 +145,40 @@ The screenshots also exposed a visual bug: the renderer body had a hard-coded li
 Current portable ZIP SHA-256: C0532F49379FF59E8626C8D7997397C5F6180790EC766B92E65FE98473A01E4D. This supersedes the previous hash. Final export regeneration and the 109-file portability audit passed. Browser acceptance for the two-component MVP is complete based on direct inspection plus the user's screenshots and interaction report. Recording remains to be done; no recording, publication, deployment or merge is claimed.
 
 After the contrast fix, the production renderer build and both runtime suites (standalone DOM and parent-frame protocol) passed, including enabled action dispatch and disabled no-event behavior. No new test was added for the two-line theme correction; existing behavior suites and real light/dark browser inspection cover the change.
+
+### Registration workflow and Checkbox extension - October 13, 2026 Eastern
+
+- [x] Create local working-MVP checkpoint d2ea8ab and preserve the C0532F49 two-component archive.
+- [x] Move component behavior and demo fixtures to registered adapter/fixture files; keep shared extraction/schema/packaging generic.
+- [x] Add MaterialCheckbox via registration, adapter and fixtures only; explicitly map onCheckedChange and diagnose unsupported callback expressions.
+- [x] Validate all three components, clean ZIP install/build, and actual Composer rendering.
+- [x] Document the bounded supported-component workflow and event/data ownership. Stop at three components; no push/publication/deployment/merge.
+
+Decision: Checkbox emits event context.checked (boolean). It does not write the A2UI data model on click. The host applies updateDataModel; external bound changes remain authoritative. This differs explicitly from Storybook's local updateArgs callback.
+
+### Three-component completion - October 13, 2026 Eastern
+
+Local checkpoint: d2ea8ab. Preserved two-component source ZIP C0532F49 under artifacts (ignored). The small registration/adapter/fixture workflow is documented in EXPORT_ANOTHER_COMPONENT.md and shipped as ADDING_COMPONENTS.md. Shared exporter, metadata/contract generation, ZIP and renderer hashes did not change when Checkbox was added; proof and regression tests are in docs/evidence/registration-workflow-proof.json.
+
+All 11 extraction/schema/workflow tests passed. All three pinned Composer schema resolver checks passed. A fresh external ZIP extraction installed 470 locked packages, passed the 134-file portability audit and positive/negative Draft 2020-12 checks, built successfully and passed both ES-module production DOM/parent-frame runtime suites. Actual Chrome Composer rendered Checkbox, applied external checked updates, emitted true/false boolean events, and added no disabled event. Metric bound updates and enabled/disabled Button regression checks also passed in that three-component renderer. Screenshots and detailed evidence are in SETUP_STATUS.md and docs/evidence.
+
+Checkbox model policy is host-owned: clicks emit context.checked and preserve the current displayed/model value until the host applies updateDataModel. The registered Storybook onCheckedChange callback signature and fn() example are validated, never executed or serialized as props. Unsupported callbacks/expressions diagnose rather than disappear.
+
+Final ZIP: catalogs/material/a2ui-three-output.zip; SHA-256 5D2268182382732D94B9B71CC0501A221A820D9B581EC178AC9713C2149B4AAB. DEMO_RECORDING.md now covers all three components. This extension stops at three; no push, publication, deployment or merge occurred. Optional recording is the only demonstration activity not performed.
+
+### Stabilization after read-only audit - October 13, 2026 Eastern
+
+- Normalize CRLF to LF only in the workflow-proof test. Preserve the original proof JSON/hashes, assert historical before/after equality, test LF and CRLF variants, and confirm real content changes still alter the hash. The existing two-vs-three-component generator checks remain in place; all 11 tests pass.
+- Align the Composer schema test default with export:a2ui's existing a2ui-output default. Named exports must be passed explicitly to the resolver test; both extension-guide copies and DEMO_RECORDING.md now show this. The preserved two-component default output was not regenerated.
+- New artifact: catalogs/material/a2ui-three-stabilized.zip, SHA-256 16C6D587C617967B703731036AB1BB6ED431CC0C82CFB46DD6DF7EC3BC487CC9. Repeated generation is byte-identical. Its only difference from the preserved three-component ZIP is ADDING_COMPONENTS.md; all component/runtime/schema code is unchanged.
+- A fresh external extraction installed 470 locked packages and passed the 134-file portability audit, Draft 2020-12 positive/negative checks, production build and standalone/parent-frame runtime suites. The pinned Composer schema resolver passed after granting subprocess execution permission. Exact commands, environment limitations and extraction location are appended to SETUP_STATUS.md.
+- Real Composer UI interactions were not repeated: no browser provider is available, and localhost:4200/3457 are not responding in this session. Prior browser evidence remains preserved and is not represented as a new rerun. No new component, dependency/framework upgrade, stage, commit, push, publication, deployment or merge occurred; d2ea8ab and the known-good C0532F49 archives remain intact.
+- Fresh extracted dev server on localhost:3458 passed HTTP checks for HTML, main.js, catalog and bound Checkbox fixture after compilation completed. Final git diff --check passed; presentation readiness remains supported by new automated/portable verification and preserved prior browser acceptance.
+
+### GitHub presentation checkpoint - October 13, 2026 Eastern
+
+The user authorized committing and pushing the finished exporter to `feat/storybook-a2ui-exporter` on `https://github.com/o0avdi/capstone-catalogs`, overriding the earlier no-push scope for this checkpoint only. The branch was created from d2ea8ab without changing existing branches. No additional features, dependency upgrades, deployment, merge, or history rewrite are part of this task.
+
+The user personally verified all three components in actual Composer using the final extracted renderer at localhost:3458. README now documents current support, architecture, reproduction, Composer configuration, examples and limits. New browser screenshots and the temporary extraction-location text remain local; the registration workflow proof is included because tests require it. Historical machine-specific documentation paths were replaced with portable placeholders. Both preserved two-component ZIPs still match C0532F49379FF59E8626C8D7997397C5F6180790EC766B92E65FE98473A01E4D.
+
+Publication validation passed: 11/11 exporter tests, pinned Composer resolver, fresh ZIP installation (470 packages), 134-file portable audit, Draft 2020-12 checks, production build and standalone/Checkbox/parent-frame runtime checks. Sandbox install/subprocess failures and the successful fresh retry are recorded separately in SETUP_STATUS.md. Source dependencies, lockfiles and reference fixture are unchanged.

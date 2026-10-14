@@ -3,10 +3,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import { createRequire } from 'node:module';
+import Ajv2020 from 'ajv/dist/2020.js';
 import { extract, discover, makeCatalog } from './metadata.mjs';
-const require = createRequire(import.meta.url);
-const Ajv2020 = require('../../a2ui-output/node_modules/ajv/dist/2020.js').default;
 const root = process.cwd();
 const registrations = JSON.parse(fs.readFileSync('a2ui/registrations.json'));
 const index = JSON.parse(fs.readFileSync('storybook-static/index.json'));
@@ -109,7 +107,7 @@ test('required, types, enums, internal refs and inherited unevaluated fields fai
 function changedFixture(change) {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'a2ui-metadata-'));
   try {
-    for (const file of [...registrations.flatMap((r) => [r.story, ...r.files])]) {
+    for (const file of [...registrations.flatMap((r) => [r.story,r.adapterFile,r.fixturesFile,...r.files])]) {
       const dest = path.join(tmp, file);
       fs.mkdirSync(path.dirname(dest), { recursive: true });
       fs.copyFileSync(path.join(root, file), dest);
@@ -150,7 +148,7 @@ test('unsupported types, missing mappings, identity collisions, expressions and 
     /missing local source dependency/,
   );
   assert.throws(
-    () => extract(root, [{ ...registrations[0], adapter: 'MissingAdapter' }], index),
+    () => extract(root, [{ ...registrations[0], adapterFile: 'a2ui/components/missing/adapter.ts' }], index),
     /adapter mapping/,
   );
   assert.throws(
@@ -222,4 +220,41 @@ test('supported source enum edit regenerates catalog when story options agree', 
       changed,
     ).components.FinanceMetricCard.allOf[2].properties.state.anyOf[0].enum.includes('warning'),
   );
+});
+
+const checkbox={id:'root',component:'MaterialCheckbox',label:'Archive',checked:false,disabled:false,action:{event:{name:'checkedChange'}}};
+test('Checkbox extracts booleans and explicitly maps the Storybook callback',()=>{
+ const c=metadata.find(c=>c.name==='MaterialCheckbox');assert.equal(c.storyIds.length,4);
+ assert.deepEqual(c.fields.map(f=>[f.name,f.schema.type]),[['label','string'],['checked','boolean'],['disabled','boolean']]);
+ assert.equal(c.callbacks[0].name,'onCheckedChange');assert.equal(c.callbacks[0].modelUpdate,'host');
+ assert.deepEqual(c.callbacks[0].payload,{checked:'$event.checked'});
+ assert.ok(c.examples.every(e=>!('onCheckedChange' in e.props)));
+ for(const instance of [checkbox,{...checkbox,checked:true},{...checkbox,checked:{path:'/includeArchived'}}])assert.ok(validate(instance),JSON.stringify(validate.errors));
+ for(const instance of [{...checkbox,checked:'true'},{...checkbox,checked:1},{...checkbox,disabled:0},{...checkbox,checked:undefined},{...checkbox,onCheckedChange:'fn()'}])assert.equal(validate(instance),false,JSON.stringify(instance));
+});
+test('unmapped callbacks, incompatible signatures and callback expressions are diagnosed',()=>{
+ const registration=registrations.find(r=>r.name==='MaterialCheckbox');
+ assert.throws(()=>extract(root,[{...registration,callbacks:{}}],index),/onCheckedChange.*unsupported metadata expression/);
+ assert.throws(()=>changedFixture(tmp=>{const p=path.join(tmp,registration.story);fs.writeFileSync(p,fs.readFileSync(p,'utf8').replace('onCheckedChange: fn()','onCheckedChange: () => {}'));}),/unsupported callback expression/);
+ assert.throws(()=>changedFixture(tmp=>{const p=path.join(tmp,registration.story);fs.writeFileSync(p,fs.readFileSync(p,'utf8').replace('(checked: boolean) => void','(checked: string) => void'));}),/callback signature conflicts/);
+});
+test('Checkbox registration alone extends schemas, fixtures and adapters while shared logic stays unchanged',async()=>{
+ const {createHash}=await import('node:crypto');const {contracts,registrationSource,componentFixtures}=await import('./component-files.mjs');
+ const proof=JSON.parse(fs.readFileSync('../../docs/evidence/registration-workflow-proof.json'));
+ // Proof hashes were captured with LF. Normalize only checkout line endings;
+ // all other source changes must still fail against the preserved baseline.
+ const sourceHash=(text)=>createHash('sha256').update(text.replace(/\r\n/g,'\n')).digest('hex');
+ for(const [file,before] of Object.entries(proof.beforeAddingCheckbox)){
+  assert.equal(proof.afterAddingCheckbox[file],before,file+' historical before/after');
+  const text=fs.readFileSync(path.resolve('../..',file),'utf8');
+  const lf=text.replace(/\r\n/g,'\n');
+  assert.equal(sourceHash(lf),before,file+' LF');
+  assert.equal(sourceHash(lf.replace(/\n/g,'\r\n')),before,file+' CRLF');
+  assert.notEqual(sourceHash(lf+'// regression\n'),before,file+' content-change detection');
+ }
+ const subset=metadata.filter(c=>c.name!=='MaterialCheckbox');assert.equal(makeCatalog(subset).components.MaterialCheckbox,undefined);
+ const added=componentFixtures(root,metadata);const original=componentFixtures(root,subset);
+ assert.ok(added.fixtures.checkboxBound);assert.equal(original.fixtures.checkboxBound,undefined);
+ assert.match(contracts(metadata),/CheckboxAdapterApi/);assert.doesNotMatch(contracts(subset),/CheckboxAdapterApi/);
+ assert.match(registrationSource(metadata),/adapters\/checkbox/);
 });

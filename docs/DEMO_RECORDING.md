@@ -1,57 +1,46 @@
-# October 15 recorded demo
+# Recorded three-component demo
 
-A recorded demonstration is sufficient. The export and automated checks are implemented. The missing markdown dependency that caused a blank browser preview is fixed. All required Composer browser checks passed: literal Metric Card, bound revenue update, enabled Button save event and disabled no-event behavior. Disabled Button readability is improved for light and dark themes. The recording itself remains to be captured; repeat the steps below for the clip.
+All three components passed real Composer checks. Evidence is in docs/evidence and exact commands/results are in SETUP_STATUS.md. A recording is optional and has not been made. Do not push, publish, deploy or merge as part of this workflow.
 
-## Reproduce the export
+## Reproduce the portable source bundle
 
-Run in catalogs/material, with the baseline dependencies installed:
+In catalogs/material, reuse the verified baseline dependencies and built Storybook index. Rebuild Storybook only when discovery changes:
 
     npm.cmd run build-storybook
-    npm.cmd run export:a2ui
+    npm.cmd run export:a2ui -- --out a2ui-three-output
+    npm.cmd run test:a2ui
+    npm.cmd run test:a2ui:composer -- ../../../composer a2ui-three-output
 
-The existing baseline Storybook build may be reused if story discovery did not change. Descriptions, types, defaults and story args are read directly from current source when exporting. The command produces a2ui-output/ and a2ui-output.zip. For Metric Card alone:
+The exporter reads current source descriptions, types, requiredness, defaults and declarative story args. Its component code comes from registered adapters; fixtures come from per-component configurations. It creates a2ui-three-output/ and a2ui-three-output.zip. The preserved two-component ZIP is artifacts/two-component-known-good-C0532F49.zip.
 
-    npm.cmd run export:a2ui -- --metric-only --out a2ui-metric
+## Clean installation
 
-Choose a new output directory or one containing export-manifest.json. The exporter refuses to overwrite unrelated directories. It archives only manifest-listed files; installed node_modules, build output and caches are excluded. ZIP bytes and generated content are deterministic.
-
-## Use the portable ZIP
-
-Extract a2ui-output.zip into a fresh folder outside this checkout. In that folder:
+Extract the three-component ZIP into a fresh folder outside the checkout. In that folder:
 
     npm.cmd ci --no-audit --no-fund
     npm.cmd run test:portable
     npm.cmd run test:schema
     npm.cmd run build
     npm.cmd run test:runtime
-    npm.cmd start
+    npm.cmd exec -- ng serve --host localhost --port 3457
 
-Open http://localhost:3456. Select Literal metric, then Bound metric and Update revenue. The formatted value should change from $1,340,000 to $1,750,000. Select Enabled button, click Save changes, and check the visible save action. Select Disabled button: it must be disabled and add no event.
+Port 3457 keeps the known-good two-component server on 3456 available. The local extraction-location record is intentionally untracked; choose a fresh directory for reproduction. Check /main.js as well as /catalog.json: markdown-it is required for real dev-server startup. Runtime tests execute the production ES module graph and its lazy/shared chunks.
 
-After installing the default export, run the exporter tests in catalogs/material:
+## Recording sequence
 
-    npm.cmd run test:a2ui
-    npm.cmd run test:a2ui:composer
-
-The last command reads the sibling pinned Composer source without editing it and exercises its actual catalog schema resolver. Neither test is a substitute for the browser steps below.
-
-## Check Composer and capture the recording
-
-Start the Composer shell from the pinned sibling reference checkout in its own terminal:
+Use the pinned Composer shell at http://localhost:4200. Its existing startup command in the sibling reference is:
 
     corepack.cmd yarn workspace a2ui-composer-shell exec ng serve --host localhost --port 4200
 
-This is the already verified upstream command; the upstream checkout needs no source or configuration changes. Use the portable renderer on port 3456, rather than starting the upstream Angular sample on that port too.
+1. Show the Metric Card, Button and Checkbox stories and a2ui/registrations.json. Show the adapter and fixtures directories, then run the export command and inspect the ZIP's actual source/styles/contracts, lockfile, bridge and license.
+2. In Composer Settings select Portable Three Components at http://localhost:3457 (or add that custom renderer). The actual shell retrieves the three-component catalog.
+3. Paste /fixtures/metricBound.json from the renderer into the raw layout editor. Show $1,340,000, then change Data Model to {"revenue":1750000} while leaving the component bound to /revenue. Show $1,750,000.
+4. Paste /fixtures/button.json, click Save changes and show the save event with surface demo, component root and context.source portable-export. Paste /fixtures/buttonDisabled.json; click it and show that no event is added and the disabled label remains readable.
+5. Paste /fixtures/checkboxBound.json. Click the unchecked control and show checkedChange with context.checked true while Data Model remains false. Apply {"includeArchived":true} in Data Model and show the check mark. Click it again: the new event contains checked false while the host-owned model and displayed control remain true. Apply false externally to clear the control.
+6. Paste /fixtures/checkboxDisabled.json and verify native disabled state, checked display, and no new event on click. Show the registration workflow proof and the clean ZIP checks.
 
-1. Open http://localhost:4200. In Settings, use Add custom renderer, name it Portable Finance, set Renderer URL to http://localhost:3456, and select it. Verify the received catalog lists FinanceMetricCard and MaterialButton only.
-2. Copy the message array from http://localhost:3456/fixtures/metricLiteral.json into Composer's raw layout JSON editor. Verify the actual card, styles and formatted value in the rendered frame.
-3. Replace it with /fixtures/metricBound.json. In the Data model JSON editor, change revenue from 1340000 to 1750000 while keeping the bound component. Verify the visible card changes. If editing the model is unavailable, append the updateDataModel command from /fixtures/revenueUpdate.json to the message array and observe the update.
-4. Replace the layout with /fixtures/button.json. Click Save changes in the rendered frame and verify the Events panel records save, sourceComponentId root, surfaceId demo, and context.source portable-export.
-5. Replace it with /fixtures/buttonDisabled.json. Verify disabled appearance and that a click adds no event.
-6. Record source stories, export generation, the folder/ZIP and source files, clean install/build results, and the observed Composer behaviors above. A four-to-five-minute clip is sufficient. No API key, chat prompt or LLM call is involved.
+No API key or LLM call is needed. A five-to-six-minute recording is sufficient. Checkbox emits proposals; the host must apply the checked value. This explicitly replaces Storybook's local updateArgs behavior.
 
-## Scope and remaining verification
+## Adding another supported component later
 
-Both required components, typed literal/path bindings, event actions, source packaging and standalone renderer are included. Checkbox is deferred until the real Composer browser check passes. There are no custom functions, arbitrary template extraction, React/Shadcn export, custom theme messages, or partial component updates. The vendored bridge license/source and dependency lockfile are included. No publication, deployment or merge is part of this workflow.
-
-Save the known-good archive and its SHA-256 after all checks. Actual validation results and the browser automation limitation are recorded in SETUP_STATUS.md and A2UI_EXPORT_MVP_PLAN.md.
+See EXPORT_ANOTHER_COMPONENT.md. This task stops at FinanceMetricCard, MaterialButton and MaterialCheckbox; no fourth component is part of this change. The workflow is a registration, adapter and fixture file, with supported source extraction and strict portable contracts rather than arbitrary template interpretation.

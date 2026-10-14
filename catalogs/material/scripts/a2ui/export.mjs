@@ -3,6 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { extract, makeCatalog, catalogId } from './metadata.mjs';
 import { archive } from './zip.mjs';
+import { contracts, registrationSource, componentFixtures } from './component-files.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const options = process.argv.slice(2);
@@ -33,7 +34,14 @@ function copyTree(src, dest) {
   for (const entry of fs
     .readdirSync(src, { withFileTypes: true })
     .sort((a, b) => a.name.localeCompare(b.name))) {
-    if (entry.name === 'package-lock.json') continue;
+    if (
+      entry.name === 'package-lock.json' ||
+      ['node_modules', '.angular', '.git', 'coverage'].includes(entry.name) ||
+      (entry.name === 'dist' && src.startsWith(path.join(root, 'a2ui/renderer')))
+    )
+      continue;
+    if (entry.isSymbolicLink())
+      throw new Error('Source packaging refuses symlinks: ' + path.join(src, entry.name));
     const target = path.posix.join(dest, entry.name);
     if (entry.isDirectory()) copyTree(path.join(src, entry.name), target);
     else write(target, fs.readFileSync(path.join(src, entry.name)));
@@ -65,119 +73,31 @@ json('diagnostics.json', {
     'React catalogs',
   ],
 });
-function fixture(component, data) {
-  return [
-    { version: 'v0.9', createSurface: { surfaceId: 'demo', catalogId } },
-    ...(data
-      ? [{ version: 'v0.9', updateDataModel: { surfaceId: 'demo', path: '/', value: data } }]
-      : []),
-    {
-      version: 'v0.9',
-      updateComponents: { surfaceId: 'demo', components: [{ id: 'root', ...component }] },
-    },
-  ];
-}
-const metric = metadata.find((c) => c.name === 'FinanceMetricCard');
-const metricProps = metric.examples[0].props;
-const fixtures = {
-  metricLiteral: fixture({ component: metric.name, ...metricProps }),
-  metricBound: fixture(
-    { component: metric.name, ...metricProps, value: { path: '/revenue' } },
-    { revenue: 1340000 },
-  ),
-};
-if (metadata.some((c) => c.name === 'MaterialButton')) {
-  const button = metadata.find((c) => c.name === 'MaterialButton');
-  fixtures.button = fixture({
-    component: button.name,
-    ...button.examples[0].props,
-    action: { event: { name: 'save', context: { source: 'portable-export' } } },
-  });
-  fixtures.buttonDisabled = fixture({
-    component: button.name,
-    ...button.examples[0].props,
-    disabled: true,
-    action: { event: { name: 'save' } },
-  });
-}
+const { fixtures, menu, usages } = componentFixtures(root, metadata);
 json('fixtures.json', fixtures);
 json('public/fixtures.json', fixtures);
-for(const [name,messages] of Object.entries(fixtures)){json('fixtures/'+name+'.json',messages);json('public/fixtures/'+name+'.json',messages);}
-json('public/fixtures/revenueUpdate.json',[{version:'v0.9',updateDataModel:{surfaceId:'demo',path:'/revenue',value:1750000}}]);
-const usages = Object.fromEntries(
-  metadata.map((c) => [
-    c.name,
-    {
-      usage: [
-        {
-          id: 'root',
-          component: c.name,
-          ...c.examples[0].props,
-          ...(c.events ? { action: { event: { name: 'save' } } } : {}),
-        },
-      ],
-    },
-  ]),
-);
+json('public/demo.json', menu);
+for (const [name, messages] of Object.entries(fixtures)) {
+  json('fixtures/' + name + '.json', messages);
+  json('public/fixtures/' + name + '.json', messages);
+}
 json('public/usages.json', usages);
-function zSchema(s) {
-  if (s.enum) return `z.enum(${JSON.stringify(s.enum)})`;
-  if ('const' in s) return `z.literal(${JSON.stringify(s.const)})`;
-  if (Array.isArray(s.type))
-    return `z.union([${s.type.map((t) => zSchema({ type: t })).join(',')}])`;
-  if (s.anyOf) return `z.union([${s.anyOf.map(zSchema).join(',')}])`;
-  if (!['string', 'number', 'boolean'].includes(s.type))
-    throw new Error('Unsupported runtime schema ' + JSON.stringify(s));
-  return `z.${s.type}()`;
-}
-let adapters = `// Generated from source types and explicit registrations.\nimport {Component,Injectable,inject} from '@angular/core';\nimport {CatalogComponent,AngularCatalog,A2uiRendererService} from '@a2ui/angular/v0_9';\nimport {DataContext} from '@a2ui/web_core/v0_9';\nimport {z} from 'zod';\nimport {MetricCardComponent} from './app/finance/components/metric-card.component';\n`;
-if (fixtures.button) adapters += `import {MatButtonModule} from '@angular/material/button';\n`;
-adapters += `const binding=z.object({path:z.string().min(1)}).strict();\n`;
+write('src/contracts.ts', contracts(metadata));
 for (const c of metadata) {
-  const fields = c.fields
-    .map(
-      (f) => `${f.name}:z.union([${zSchema(f.schema)},binding])${f.required ? '' : '.optional()'}`,
-    )
-    .join(',\n');
-  adapters += `export const ${c.adapter}Api={name:${JSON.stringify(c.name)},schema:z.object({${fields}${c.events ? `,action:z.object({event:z.object({name:z.string().min(1),context:z.record(z.union([z.string(),z.number(),z.boolean()])).optional()}).strict()}).strict()` : ''}}).strict()};\n`;
-  if (c.name === 'FinanceMetricCard') {
-    const bindings = c.fields
-      .map((f) => {
-        const fallback = 'default' in f.schema ? JSON.stringify(f.schema.default) : 'undefined';
-        const expression =
-          'props().' +
-          f.name +
-          (f.required ? '.' : '?.') +
-          'value()' +
-          (f.required ? '' : ' ?? ' + fallback);
-        return '[' + f.name + ']=\"' + expression.replaceAll('\"', '&quot;') + '\"';
-      })
-      .join('\n');
-    adapters += `@Component({selector:'export-metric-card',standalone:true,imports:[MetricCardComponent],template:\`<finance-metric-card ${bindings} />\`})\nexport class MetricCardAdapter extends CatalogComponent<typeof MetricCardAdapterApi> {}\n`;
-  } else {
-    adapters += `@Component({selector:'export-material-button',standalone:true,imports:[MatButtonModule],template:\`<button type="button" [matButton]="props().appearance.value()" [disabled]="props().disabled.value()" (click)="click()">{{props().label.value()}}</button>\`})\nexport class ButtonAdapter extends CatalogComponent<typeof ButtonAdapterApi> {\n private renderer=inject(A2uiRendererService);\n click() {if(this.props().disabled.value()) return; const surface=this.renderer.surfaceGroup.getSurface(this.surfaceId()); if(!surface) throw new Error('Button surface is missing'); const action=new DataContext(surface,this.dataContextPath()).resolveAction(this.props().action.value()); surface.dispatchAction(action,this.componentId());}\n}\n`;
-  }
+  write(c.adapterOutput, fs.readFileSync(path.join(root, c.adapterFile)));
+  for (const asset of c.assets ?? [])
+    write(asset.output, fs.readFileSync(path.join(root, asset.source)));
+  write('provenance/' + c.adapterFile, fs.readFileSync(path.join(root, c.adapterFile)));
+  write('provenance/' + c.fixturesFile, fs.readFileSync(path.join(root, c.fixturesFile)));
 }
-adapters +=
-  'export const resolvedSchemas:Record<string,z.ZodTypeAny>={' +
-  metadata
-    .map(
-      (c) =>
-        JSON.stringify(c.name) +
-        ':z.object({' +
-        c.fields
-          .map((f) => f.name + ':' + zSchema(f.schema) + (f.required ? '' : '.optional()'))
-          .join(',') +
-        (c.events ? ',action:ButtonAdapterApi.schema.shape.action' : '') +
-        '}).strict()',
-    )
-    .join(',') +
-  '};\n';
-adapters += `@Injectable()\nexport class ExportCatalog extends AngularCatalog {constructor(){super(${JSON.stringify(catalogId)},[${metadata.map((c) => `{...${c.adapter}Api,component:${c.adapter}}`).join(',')}],[]);}}\n`;
-write('src/adapters.ts', adapters);
+write('src/adapters.ts', registrationSource(metadata));
 write(
   'src/public-api.ts',
-  `export * from './adapters';\nexport * from './app/finance/components/metric-card.component';\n`,
+  "export * from './adapters';\nexport * from './contracts';\n" +
+    metadata
+      .flatMap((c) => c.publicExports ?? [])
+      .map((file) => "export * from './" + file.replace(/^src\//, '').replace(/\.ts$/, '') + "';\n")
+      .join(''),
 );
 copyTree(path.join(root, 'scripts/a2ui/portable'), 'scripts');
 write('README.md', fs.readFileSync(path.join(root, 'a2ui/README-export.md')));

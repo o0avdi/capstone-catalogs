@@ -1,0 +1,7 @@
+{"usage":"checkbox","fixtures":[
+ {"name":"checkbox","label":"Unchecked checkbox","example":"Unchecked","props":{"action":{"event":{"name":"checkedChange","context":{"source":"portable-export"}}}}},
+ {"name":"checkboxBound","label":"Bound checkbox","example":"Unchecked","props":{"checked":{"path":"/includeArchived"},"action":{"event":{"name":"checkedChange","context":{"source":"portable-export"}}}},"data":{"includeArchived":false}},
+ {"name":"checkboxCheckedUpdate","label":"Host sets checked","messages":[{"version":"v0.9","updateDataModel":{"surfaceId":"demo","path":"/includeArchived","value":true}}]},
+ {"name":"checkboxUncheckedUpdate","label":"Host clears checked","messages":[{"version":"v0.9","updateDataModel":{"surfaceId":"demo","path":"/includeArchived","value":false}}]},
+ {"name":"checkboxDisabled","label":"Disabled checkbox","example":"DisabledChecked","props":{"action":{"event":{"name":"checkedChange","context":{"source":"portable-export"}}}}}
+]}
