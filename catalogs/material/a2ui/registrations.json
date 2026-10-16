@@ -1,0 +1,102 @@
+[
+  {
+    "name": "FinanceMetricCard",
+    "story": "src/stories/finance/metric-card.stories.ts",
+    "source": "src/app/finance/components/metric-card.component.ts",
+    "className": "MetricCardComponent",
+    "adapter": "MetricCardAdapter",
+    "bindings": [
+      "label",
+      "value",
+      "format",
+      "currency",
+      "locale",
+      "subtitle",
+      "change",
+      "changeFormat",
+      "helper",
+      "icon",
+      "state"
+    ],
+    "files": [
+      "src/app/finance/components/metric-card.component.ts",
+      "src/app/finance/finance.types.ts",
+      "src/app/finance/shared/format-value.ts"
+    ],
+    "adapterFile": "a2ui/components/metric-card/adapter.ts",
+    "fixturesFile": "a2ui/components/metric-card/fixtures.json",
+    "adapterOutput": "src/adapters/metric-card.ts",
+    "publicExports": [
+      "src/app/finance/components/metric-card.component.ts"
+    ]
+  },
+  {
+    "name": "MaterialButton",
+    "story": "src/stories/material/button.stories.ts",
+    "typeName": "ButtonArgs",
+    "adapter": "ButtonAdapter",
+    "bindings": [
+      "label",
+      "disabled",
+      "appearance"
+    ],
+    "content": {
+      "label": "projected text"
+    },
+    "events": {
+      "click": "action"
+    },
+    "files": [],
+    "adapterFile": "a2ui/components/button/adapter.ts",
+    "fixturesFile": "a2ui/components/button/fixtures.json",
+    "adapterOutput": "src/adapters/button.ts",
+    "publicExports": [],
+    "assets": [
+      {
+        "source": "a2ui/components/button/adapter.scss",
+        "output": "src/adapters/button.scss"
+      }
+    ]
+  },
+  {
+    "name": "MaterialCheckbox",
+    "story": "src/stories/material/checkbox.stories.ts",
+    "typeName": "CheckboxArgs",
+    "adapter": "CheckboxAdapter",
+    "adapterFile": "a2ui/components/checkbox/adapter.ts",
+    "adapterOutput": "src/adapters/checkbox.ts",
+    "fixturesFile": "a2ui/components/checkbox/fixtures.json",
+    "bindings": [
+      "label",
+      "checked",
+      "disabled"
+    ],
+    "content": {
+      "label": "projected text"
+    },
+    "events": {
+      "change": "action"
+    },
+    "callbacks": {
+      "onCheckedChange": {
+        "event": "change",
+        "property": "action",
+        "parameters": [
+          {
+            "name": "checked",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "payload": {
+          "checked": "$event.checked"
+        },
+        "exampleExpression": "fn()",
+        "modelUpdate": "host"
+      }
+    },
+    "files": [],
+    "publicExports": []
+  }
+]

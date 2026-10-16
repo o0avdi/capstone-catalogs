@@ -1,0 +1,23 @@
+{
+  "usage": "metricLiteral",
+  "fixtures": [
+    { "name": "metricLiteral", "label": "Literal metric", "example": "Revenue" },
+    {
+      "name": "metricBound",
+      "label": "Bound metric",
+      "example": "Revenue",
+      "props": { "value": { "path": "/revenue" } },
+      "data": { "revenue": 1340000 }
+    },
+    {
+      "name": "revenueUpdate",
+      "label": "Update revenue",
+      "messages": [
+        {
+          "version": "v0.9",
+          "updateDataModel": { "surfaceId": "demo", "path": "/revenue", "value": 1750000 }
+        }
+      ]
+    }
+  ]
+}

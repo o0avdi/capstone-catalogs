@@ -11,7 +11,15 @@
     "storybook:material": "ng run material-catalog:storybook --port 6006",
     "storybook:shadcn": "storybook dev -p 6007 -c .storybook-shadcn",
     "build-storybook": "ng run material-catalog:build-storybook",
-    "build-storybook:shadcn": "storybook build -c .storybook-shadcn -o storybook-static-shadcn"
+    "build-storybook:shadcn": "storybook build -c .storybook-shadcn -o storybook-static-shadcn",
+    "a2ui": "node scripts/a2ui/cli.mjs",
+    "a2ui:discover": "node scripts/a2ui/cli.mjs discover",
+    "export:a2ui": "node scripts/a2ui/export.mjs",
+    "test:a2ui": "node --test --test-isolation=none scripts/a2ui/*.test.mjs",
+    "test:a2ui:composer": "node scripts/a2ui/composer-schema-test.mjs"
+  },
+  "bin": {
+    "a2ui-export": "scripts/a2ui/cli.mjs"
   },
   "private": true,
   "packageManager": "npm@11.19.0",

@@ -1,0 +1,19 @@
+{
+  "usage": "button",
+  "fixtures": [
+    {
+      "name": "button",
+      "label": "Enabled button",
+      "example": "Filled",
+      "props": {
+        "action": { "event": { "name": "save", "context": { "source": "portable-export" } } }
+      }
+    },
+    {
+      "name": "buttonDisabled",
+      "label": "Disabled button",
+      "example": "Disabled",
+      "props": { "action": { "event": { "name": "save" } } }
+    }
+  ]
+}
