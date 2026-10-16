@@ -182,3 +182,13 @@ The user authorized committing and pushing the finished exporter to `feat/storyb
 The user personally verified all three components in actual Composer using the final extracted renderer at localhost:3458. README now documents current support, architecture, reproduction, Composer configuration, examples and limits. New browser screenshots and the temporary extraction-location text remain local; the registration workflow proof is included because tests require it. Historical machine-specific documentation paths were replaced with portable placeholders. Both preserved two-component ZIPs still match C0532F49379FF59E8626C8D7997397C5F6180790EC766B92E65FE98473A01E4D.
 
 Publication validation passed: 11/11 exporter tests, pinned Composer resolver, fresh ZIP installation (470 packages), 134-file portable audit, Draft 2020-12 checks, production build and standalone/Checkbox/parent-frame runtime checks. Sandbox install/subprocess failures and the successful fresh retry are recorded separately in SETUP_STATUS.md. Source dependencies, lockfiles and reference fixture are unchanged.
+
+### Universal discovery and CLI extension - October 16, 2026 Eastern
+
+- Work continues on branch `feat/universal-a2ui-cli`, based on `feat/storybook-a2ui-exporter`.
+- Added static `.stories.ts`/`.stories.tsx` discovery independent of a built Storybook index. The current catalog reports 114 candidates: 50 Angular and 64 React/TSX.
+- Added an interactive terminal checklist plus non-interactive `discover` and `export` commands. Users choose exact components and loose JSON, renderer ZIP, or both.
+- Added a normalized mixed-framework catalog/messages/diagnostics output and deterministic universal ZIP container.
+- Registered Angular components retain the verified Angular renderer. Shadcn stories use a self-contained React/Vite catalog-demo renderer containing the original Shadcn sources. Unregistered Angular stories remain JSON-only until they receive reviewed adapters.
+- Added exact registered-component subset selection to the legacy exporter and made portable schema/runtime tests conditional on selected fixtures.
+- Verification this turn: Storybook production build passed; 18/18 source tests passed; mixed MaterialButton + ShadcnButton JSON/ZIP generation passed; a fresh extracted React renderer installed 1,406 locked packages and built successfully. The extracted Angular subset installed 470 packages and passed portability/schema tests; its production build exited 134 without diagnostics in this execution environment, so the regenerated subset runtime test could not run here. The previously verified full Angular renderer path remains preserved.

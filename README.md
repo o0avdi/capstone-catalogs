@@ -1,6 +1,6 @@
 # Capstone Catalogs
 
-Shared Storybook component catalogs for our capstone project. The current catalog demonstrates Angular Material components and their states. The repository also provides a working, metadata-driven Angular Storybook-to-A2UI exporter supporting FinanceMetricCard, MaterialButton, and MaterialCheckbox.
+Shared Storybook component catalogs for our capstone project. The repository includes a universal Storybook-to-A2UI CLI that discovers Angular Material and React/Shadcn stories, lets users choose components and output formats, and produces loose A2UI JSON and/or a self-contained renderer ZIP.
 
 ## Get started
 
@@ -103,9 +103,41 @@ Run these inside `catalogs/material`:
 - If a checkbox reports a missing accessible label, check whether Controls has overridden its label with an empty string. Reset the story and rerun the check; do not dismiss findings without inspecting them.
 - If an install or build fails, share the actual terminal error and your `node --version` and `npm --version` output. Keep the lockfile intact while diagnosing it.
 
-## Angular Storybook-to-A2UI exporter
+## Universal Storybook-to-A2UI CLI
 
-The exporter packages a generated JSON Schema catalog, selected component source and styles, Angular adapters, fixed A2UI v0.9 examples, strict runtime validation, and an independently runnable Angular renderer. It supports **FinanceMetricCard**, **MaterialButton**, and **MaterialCheckbox**. The composed React/Shadcn Storybook is excluded. No API key or LLM is needed.
+Run these commands inside `catalogs/material`:
+
+```sh
+npm ci
+npm run a2ui:discover
+npm run a2ui
+```
+
+`npm run a2ui` opens an interactive checklist. Use the arrow keys to move, Enter or Space to toggle a component, `A` to select/clear all, and Enter on the final row to continue. A second checklist selects loose JSON, a renderer ZIP, or both.
+
+Discovery statically scans `.stories.ts` and `.stories.tsx` files; a Storybook build is not required. Every candidate reports one of these states:
+
+- `portable`: a reviewed registration and renderer adapter exist.
+- `custom`: a library-specific renderer path exists, currently the Shadcn catalog-demo renderer.
+- `needs-configuration`: JSON can be generated, but a renderer adapter is still required for ZIP export.
+
+The same workflow supports scripts and CI:
+
+```sh
+npm run a2ui -- discover --json
+npm run a2ui -- export \
+  --components MaterialButton,ShadcnButton \
+  --outputs json,zip \
+  --out ./a2ui-export
+```
+
+Loose output contains `catalog.json`, `messages.json`, `components.json`, and `diagnostics.json`. The ZIP additionally contains selected original stories/direct component sources and independent framework projects under `renderers/angular` and `renderers/react`. It never includes `node_modules` or machine-specific source paths.
+
+See [the universal exporter guide](docs/UNIVERSAL_EXPORTER.md) for the output contract, limitations, and validation commands.
+
+## Registered Angular renderer
+
+The existing registered Angular path packages a generated JSON Schema catalog, selected component source and styles, Angular adapters, fixed A2UI v0.9 examples, strict runtime validation, and an independently runnable Angular renderer. It supports **FinanceMetricCard**, **MaterialButton**, and **MaterialCheckbox**. No API key or LLM is needed.
 
 Discovery uses the built Storybook index. A bounded TypeScript extractor reads current source types, required inputs, defaults, descriptions, and declarative CSF metadata. Explicit registrations map inputs, projected content, events, source files, adapters, and fixtures. Unsupported metadata is diagnosed. Generated schema and runtime contracts share that metadata; the reference catalog in `docs/references/` is never used as generated output.
 

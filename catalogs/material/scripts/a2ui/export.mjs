@@ -12,8 +12,44 @@ const out = path.resolve(get('--out') ?? path.join(root, 'a2ui-output'));
 if (out === root || root.startsWith(out + path.sep))
   throw new Error('Output must not be the project or a parent directory.');
 const registrations = JSON.parse(fs.readFileSync(path.join(root, 'a2ui/registrations.json')));
-const selected = options.includes('--metric-only') ? registrations.slice(0, 1) : registrations;
-const index = JSON.parse(fs.readFileSync(path.join(root, 'storybook-static/index.json')));
+const componentOption = get('--components');
+const requestedNames = componentOption
+  ? componentOption.split(',').map((name) => name.trim()).filter(Boolean)
+  : undefined;
+if (componentOption !== undefined && !requestedNames.length)
+  throw new Error('--components requires at least one registered component name.');
+if (requestedNames?.length !== new Set(requestedNames).size)
+  throw new Error('--components contains duplicate component names.');
+const unknownNames = requestedNames?.filter(
+  (name) => !registrations.some((registration) => registration.name === name),
+);
+if (unknownNames?.length)
+  throw new Error(
+    `Unknown registered component${unknownNames.length === 1 ? '' : 's'}: ${unknownNames.join(', ')}`,
+  );
+if (options.includes('--metric-only') && requestedNames)
+  throw new Error('--metric-only cannot be combined with --components.');
+const selected = requestedNames
+  ? registrations.filter((registration) => requestedNames.includes(registration.name))
+  : options.includes('--metric-only')
+    ? registrations.slice(0, 1)
+    : registrations;
+const indexFile = path.join(root, 'storybook-static/index.json');
+const index = fs.existsSync(indexFile)
+  ? JSON.parse(fs.readFileSync(indexFile))
+  : {
+      v: 5,
+      entries: Object.fromEntries(
+        selected.map((registration) => [
+          `${registration.name.toLowerCase()}--static-discovery`,
+          {
+            id: `${registration.name.toLowerCase()}--static-discovery`,
+            type: 'story',
+            importPath: registration.story,
+          },
+        ]),
+      ),
+    };
 const metadata = extract(root, selected, index);
 const catalog = makeCatalog(metadata);
 if (fs.existsSync(out) && !fs.existsSync(path.join(out, 'export-manifest.json')))
@@ -120,6 +156,10 @@ json('export-manifest.json', {
   catalogId,
   files: [...written, 'export-manifest.json'].sort(),
 });
-archive(out, [...written], out + '.zip');
-console.log(`Exported ${metadata.map((c) => c.name).join(', ')} to ${out} and ${out}.zip`);
+if (!options.includes('--no-zip')) archive(out, [...written], out + '.zip');
+console.log(
+  `Exported ${metadata.map((c) => c.name).join(', ')} to ${out}${
+    options.includes('--no-zip') ? '' : ` and ${out}.zip`
+  }`,
+);
 for (const warning of metadata.flatMap((c) => c.warnings)) console.log('NOTICE: ' + warning);
