@@ -133,7 +133,7 @@ npm run a2ui -- export \
 
 Loose output contains `catalog.json`, `messages.json`, `components.json`, and `diagnostics.json`. The ZIP additionally contains selected original stories/direct component sources and independent framework projects under `renderers/angular` and `renderers/react`. It never includes `node_modules` or machine-specific source paths.
 
-See [the universal exporter guide](docs/UNIVERSAL_EXPORTER.md) for the output contract, limitations, and validation commands.
+See the [detailed exporter instructions](catalogs/material/A2UI_EXPORTER_README.md) for the complete interactive and scripted workflow, output contents, renderer setup, examples, safety behavior, and troubleshooting. The shorter [universal exporter contract](docs/UNIVERSAL_EXPORTER.md) describes the design boundary and validation contract.
 
 ## Registered Angular renderer
 
