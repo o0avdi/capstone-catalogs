@@ -1,0 +1,312 @@
+{
+  "v": 0,
+  "components": {
+    "example-button": {
+      "id": "example-button",
+      "name": "Button",
+      "path": "./intro/src/stories/Button.stories.ts",
+      "jsDocTags": {},
+      "description": "Primary UI component for user interaction",
+      "reactDocgenTypescript": {
+        "tags": {},
+        "filePath": "C:/Users/omara/repos/bacs496/capstone-catalogs-codex/research-output/codex-storybook/fixtures/intro/src/stories/Button.tsx",
+        "description": "Primary UI component for user interaction",
+        "displayName": "Button",
+        "methods": [],
+        "props": {
+          "primary": {
+            "defaultValue": {
+              "value": "false"
+            },
+            "description": "Is this the principal call to action on the page?",
+            "name": "primary",
+            "parent": {
+              "fileName": "fixtures/intro/src/stories/Button.tsx",
+              "name": "ButtonProps"
+            },
+            "declarations": [
+              {
+                "fileName": "fixtures/intro/src/stories/Button.tsx",
+                "name": "ButtonProps"
+              }
+            ],
+            "required": false,
+            "type": {
+              "name": "boolean"
+            }
+          },
+          "backgroundColor": {
+            "defaultValue": null,
+            "description": "What background color to use",
+            "name": "backgroundColor",
+            "parent": {
+              "fileName": "fixtures/intro/src/stories/Button.tsx",
+              "name": "ButtonProps"
+            },
+            "declarations": [
+              {
+                "fileName": "fixtures/intro/src/stories/Button.tsx",
+                "name": "ButtonProps"
+              }
+            ],
+            "required": false,
+            "type": {
+              "name": "string"
+            }
+          },
+          "size": {
+            "defaultValue": {
+              "value": "medium"
+            },
+            "description": "How large should the button be?",
+            "name": "size",
+            "parent": {
+              "fileName": "fixtures/intro/src/stories/Button.tsx",
+              "name": "ButtonProps"
+            },
+            "declarations": [
+              {
+                "fileName": "fixtures/intro/src/stories/Button.tsx",
+                "name": "ButtonProps"
+              }
+            ],
+            "required": false,
+            "type": {
+              "name": "enum",
+              "raw": "\"small\" | \"medium\" | \"large\"",
+              "value": [
+                {
+                  "value": "\"small\""
+                },
+                {
+                  "value": "\"medium\""
+                },
+                {
+                  "value": "\"large\""
+                }
+              ]
+            }
+          },
+          "label": {
+            "defaultValue": null,
+            "description": "Button contents",
+            "name": "label",
+            "parent": {
+              "fileName": "fixtures/intro/src/stories/Button.tsx",
+              "name": "ButtonProps"
+            },
+            "declarations": [
+              {
+                "fileName": "fixtures/intro/src/stories/Button.tsx",
+                "name": "ButtonProps"
+              }
+            ],
+            "required": true,
+            "type": {
+              "name": "string"
+            }
+          },
+          "onClick": {
+            "defaultValue": null,
+            "description": "Optional click handler",
+            "name": "onClick",
+            "parent": {
+              "fileName": "fixtures/intro/src/stories/Button.tsx",
+              "name": "ButtonProps"
+            },
+            "declarations": [
+              {
+                "fileName": "fixtures/intro/src/stories/Button.tsx",
+                "name": "ButtonProps"
+              }
+            ],
+            "required": false,
+            "type": {
+              "name": "(() => void)"
+            }
+          }
+        },
+        "exportName": "Button"
+      },
+      "stories": [
+        {
+          "id": "example-button--primary",
+          "name": "Primary",
+          "snippet": "const Primary = () => <Button onClick={fn()} primary label=\"Button\" />;"
+        },
+        {
+          "id": "example-button--secondary",
+          "name": "Secondary",
+          "snippet": "const Secondary = () => <Button onClick={fn()} label=\"Button\" />;"
+        },
+        {
+          "id": "example-button--large",
+          "name": "Large",
+          "snippet": "const Large = () => <Button onClick={fn()} size=\"large\" label=\"Button\" />;"
+        },
+        {
+          "id": "example-button--small",
+          "name": "Small",
+          "snippet": "const Small = () => <Button onClick={fn()} size=\"small\" label=\"Button\" />;"
+        }
+      ],
+      "import": "import { Button } from 'intro-storybook-react-template';\nimport { fn } from 'storybook/test';"
+    },
+    "components-button": {
+      "id": "components-button",
+      "name": "Button",
+      "path": "./shadbook/src/components/ui/button.stories.tsx",
+      "jsDocTags": {},
+      "reactDocgenTypescript": {
+        "tags": {},
+        "filePath": "C:/Users/omara/repos/bacs496/capstone-catalogs-codex/research-output/codex-storybook/fixtures/shadbook/src/components/ui/button.tsx",
+        "description": "",
+        "displayName": "Button",
+        "methods": [],
+        "props": {
+          "variant": {
+            "defaultValue": null,
+            "description": "",
+            "name": "variant",
+            "declarations": [],
+            "required": false,
+            "type": {
+              "name": "\"default\" | \"destructive\" | \"outline\" | \"secondary\" | \"ghost\" | \"link\" | null"
+            }
+          },
+          "size": {
+            "defaultValue": null,
+            "description": "",
+            "name": "size",
+            "declarations": [],
+            "required": false,
+            "type": {
+              "name": "\"default\" | \"sm\" | \"lg\" | \"icon\" | null"
+            }
+          },
+          "asChild": {
+            "defaultValue": {
+              "value": "false"
+            },
+            "description": "",
+            "name": "asChild",
+            "declarations": [
+              {
+                "fileName": "fixtures/shadbook/src/components/ui/button.tsx",
+                "name": "TypeLiteral"
+              }
+            ],
+            "required": false,
+            "type": {
+              "name": "boolean"
+            }
+          }
+        },
+        "exportName": "Button"
+      },
+      "stories": [
+        {
+          "id": "components-button--default",
+          "name": "Default",
+          "snippet": "const Default = () => <Button>Button</Button>;",
+          "description": "The default button component"
+        },
+        {
+          "id": "components-button--variants",
+          "name": "Variants",
+          "snippet": "const Variants = () => (\r\n    <div className=\"flex flex-wrap gap-4\">\r\n        <Button variant=\"default\">Default</Button>\r\n        <Button variant=\"destructive\">Destructive</Button>\r\n        <Button variant=\"outline\">Outline</Button>\r\n        <Button variant=\"secondary\">Secondary</Button>\r\n        <Button variant=\"ghost\">Ghost</Button>\r\n        <Button variant=\"link\">Link</Button>\r\n    </div>\r\n);",
+          "description": "Button variants showcase"
+        },
+        {
+          "id": "components-button--sizes",
+          "name": "Sizes",
+          "snippet": "const Sizes = () => (\r\n    <div className=\"flex flex-wrap items-center gap-4\">\r\n        <Button size=\"sm\">Small</Button>\r\n        <Button size=\"default\">Default</Button>\r\n        <Button size=\"lg\">Large</Button>\r\n        <div className=\"flex gap-2\">\r\n            <Button size=\"icon\" variant=\"outline\">\r\n                <Mail className=\"h-4 w-4\" />\r\n            </Button>\r\n            <Button size=\"icon\" variant=\"default\">\r\n                <Plus className=\"h-4 w-4\" />\r\n            </Button>\r\n            <Button size=\"icon\" variant=\"secondary\">\r\n                <Settings className=\"h-4 w-4\" />\r\n            </Button>\r\n        </div>\r\n    </div>\r\n);",
+          "description": "Button size variations"
+        },
+        {
+          "id": "components-button--with-icons",
+          "name": "With Icons",
+          "snippet": "const WithIcons = () => (\r\n    <div className=\"flex flex-col gap-6 w-[450px]\">\r\n        <div className=\"flex flex-wrap gap-4\">\r\n            <Button>\r\n                <Mail className=\"mr-2 h-4 w-4\" />\r\n                Login with Email\r\n            </Button>\r\n            <Button variant=\"outline\">\r\n                <Mail className=\"mr-2 h-4 w-4\" />\r\n                Login with Email\r\n            </Button>\r\n            <Button variant=\"secondary\">\r\n                <Github className=\"mr-2 h-4 w-4\" />\r\n                GitHub\r\n            </Button>\r\n        </div>\r\n\r\n        <div className=\"flex flex-wrap gap-4\">\r\n            <Button>\r\n                Next Step\r\n                <ArrowRight className=\"ml-2 h-4 w-4\" />\r\n            </Button>\r\n            <Button variant=\"outline\">\r\n                Download\r\n                <Download className=\"ml-2 h-4 w-4\" />\r\n            </Button>\r\n            <Button variant=\"secondary\">\r\n                Upload\r\n                <Upload className=\"ml-2 h-4 w-4\" />\r\n            </Button>\r\n        </div>\r\n    </div>\r\n);",
+          "description": "Buttons with icons in different positions (leading and trailing)"
+        },
+        {
+          "id": "components-button--disabled",
+          "name": "Disabled",
+          "snippet": "const Disabled = () => (\r\n    <div className=\"flex flex-col gap-4 w-[450px]\">\r\n        <div className=\"flex flex-wrap gap-4\">\r\n            <Button disabled>Default</Button>\r\n            <Button disabled variant=\"destructive\">\r\n                Destructive\r\n            </Button>\r\n            <Button disabled variant=\"outline\">\r\n                Outline\r\n            </Button>\r\n        </div>\r\n        <div className=\"flex flex-wrap gap-4\">\r\n            <Button disabled variant=\"secondary\">\r\n                Secondary\r\n            </Button>\r\n            <Button disabled variant=\"ghost\">\r\n                Ghost\r\n            </Button>\r\n            <Button disabled variant=\"link\">\r\n                Link\r\n            </Button>\r\n        </div>\r\n    </div>\r\n);",
+          "description": "Disabled state for all button variants"
+        },
+        {
+          "id": "components-button--loading",
+          "name": "Loading",
+          "snippet": "const Loading = () => (\r\n    <div className=\"flex flex-wrap gap-4\">\r\n        <Button disabled>\r\n            <Loader2 className=\"mr-2 h-4 w-4 animate-spin\" />\r\n            Please wait\r\n        </Button>\r\n        <Button disabled variant=\"outline\">\r\n            <Loader2 className=\"mr-2 h-4 w-4 animate-spin\" />\r\n            Processing\r\n        </Button>\r\n        <Button disabled variant=\"secondary\">\r\n            <Loader2 className=\"mr-2 h-4 w-4 animate-spin\" />\r\n            Loading\r\n        </Button>\r\n    </div>\r\n);",
+          "description": "Loading states with spinner for different variants"
+        },
+        {
+          "id": "components-button--form-buttons",
+          "name": "Form Buttons",
+          "snippet": "const FormButtons = () => (\r\n    <div className=\"w-[450px] space-y-8\">\r\n        <div className=\"flex flex-col gap-2\">\r\n            <div className=\"text-sm font-medium mb-2\">Login Form Actions</div>\r\n            <div className=\"flex flex-wrap gap-2\">\r\n                <Button>\r\n                    <LogIn className=\"mr-2 h-4 w-4\" />\r\n                    Log In\r\n                </Button>\r\n                <Button variant=\"outline\">Create Account</Button>\r\n            </div>\r\n        </div>\r\n\r\n        <div className=\"flex flex-col gap-2\">\r\n            <div className=\"text-sm font-medium mb-2\">Form Submit Actions</div>\r\n            <div className=\"flex justify-between\">\r\n                <Button variant=\"ghost\">Cancel</Button>\r\n                <div className=\"flex gap-2\">\r\n                    <Button variant=\"outline\">\r\n                        <RotateCcw className=\"mr-2 h-4 w-4\" />\r\n                        Reset\r\n                    </Button>\r\n                    <Button>\r\n                        <Save className=\"mr-2 h-4 w-4\" />\r\n                        Save\r\n                    </Button>\r\n                </div>\r\n            </div>\r\n        </div>\r\n\r\n        <div className=\"flex flex-col gap-2\">\r\n            <div className=\"text-sm font-medium mb-2\">Checkout Actions</div>\r\n            <div className=\"flex flex-wrap gap-2\">\r\n                <Button variant=\"outline\">Continue Shopping</Button>\r\n                <Button>\r\n                    <CreditCard className=\"mr-2 h-4 w-4\" />\r\n                    Checkout\r\n                </Button>\r\n            </div>\r\n        </div>\r\n    </div>\r\n);",
+          "description": "Common UI patterns for button usage in forms"
+        },
+        {
+          "id": "components-button--action-buttons",
+          "name": "Action Buttons",
+          "snippet": "const ActionButtons = () => (\r\n    <div className=\"w-[450px] space-y-8\">\r\n        <div className=\"flex flex-col gap-2\">\r\n            <div className=\"text-sm font-medium mb-2\">Danger Zone</div>\r\n            <div className=\"border border-red-200 rounded-md p-4 bg-red-50 dark:bg-red-950/20 dark:border-red-900/50\">\r\n                <div className=\"text-sm text-red-600 dark:text-red-400 mb-4\">\r\n                    This action cannot be undone. This will permanently delete your\r\n                    account and remove your data from our servers.\r\n                </div>\r\n                <Button variant=\"destructive\">\r\n                    <Trash className=\"mr-2 h-4 w-4\" />\r\n                    Delete Account\r\n                </Button>\r\n            </div>\r\n        </div>\r\n\r\n        <div className=\"flex flex-col gap-2\">\r\n            <div className=\"text-sm font-medium mb-2\">Account Actions</div>\r\n            <div className=\"flex flex-wrap gap-2\">\r\n                <Button variant=\"outline\">\r\n                    <Settings className=\"mr-2 h-4 w-4\" />\r\n                    Settings\r\n                </Button>\r\n                <Button variant=\"ghost\">\r\n                    <User className=\"mr-2 h-4 w-4\" />\r\n                    Profile\r\n                </Button>\r\n                <Button variant=\"secondary\">\r\n                    <LogOut className=\"mr-2 h-4 w-4\" />\r\n                    Logout\r\n                </Button>\r\n            </div>\r\n        </div>\r\n    </div>\r\n);",
+          "description": "Action buttons commonly used for destructive or critical operations"
+        },
+        {
+          "id": "components-button--button-groups",
+          "name": "Button Groups",
+          "snippet": "const ButtonGroups = () => (\r\n    <div className=\"w-[450px] space-y-8\">\r\n        <div className=\"flex flex-col gap-2\">\r\n            <div className=\"text-sm font-medium mb-2\">Segmented Control</div>\r\n            <div className=\"inline-flex rounded-md shadow-sm\">\r\n                <Button variant=\"outline\" className=\"rounded-r-none border-r-0\">\r\n                    Day\r\n                </Button>\r\n                <Button variant=\"outline\" className=\"rounded-none border-x-0\">\r\n                    Week\r\n                </Button>\r\n                <Button variant=\"outline\" className=\"rounded-l-none border-l-0\">\r\n                    Month\r\n                </Button>\r\n            </div>\r\n        </div>\r\n\r\n        <div className=\"flex flex-col gap-2\">\r\n            <div className=\"text-sm font-medium mb-2\">Cloud Actions</div>\r\n            <div className=\"inline-flex rounded-md shadow-sm\">\r\n                <Button variant=\"secondary\" className=\"rounded-r-none\">\r\n                    <Download className=\"mr-2 h-4 w-4\" />\r\n                    Download\r\n                </Button>\r\n                <Button\r\n                    variant=\"secondary\"\r\n                    className=\"rounded-l-none border-l border-l-border\"\r\n                >\r\n                    <Cloud className=\"mr-2 h-4 w-4\" />\r\n                    Sync\r\n                </Button>\r\n            </div>\r\n        </div>\r\n\r\n        <div className=\"flex flex-col gap-2\">\r\n            <div className=\"text-sm font-medium mb-2\">Mobile Button Bar</div>\r\n            <div className=\"w-full bg-muted p-2 rounded-md flex justify-between\">\r\n                <Button size=\"sm\" variant=\"ghost\">\r\n                    <ArrowRight className=\"h-4 w-4\" />\r\n                </Button>\r\n                <Button size=\"sm\">Action</Button>\r\n                <Button size=\"sm\" variant=\"ghost\">\r\n                    <Settings className=\"h-4 w-4\" />\r\n                </Button>\r\n            </div>\r\n        </div>\r\n    </div>\r\n);",
+          "description": "Button group patterns for related actions"
+        },
+        {
+          "id": "components-button--custom-styling",
+          "name": "Custom Styling",
+          "snippet": "const CustomStyling = () => (\r\n    <div className=\"w-[450px] space-y-4\">\r\n        <div className=\"flex flex-wrap gap-4\">\r\n            <Button className=\"bg-gradient-to-r from-pink-500 to-violet-500 hover:from-pink-600 hover:to-violet-600\">\r\n                Gradient\r\n            </Button>\r\n\r\n            <Button className=\"rounded-full\">Rounded</Button>\r\n\r\n            <Button className=\"bg-blue-500 hover:bg-blue-600 text-white\">\r\n                Custom Color\r\n            </Button>\r\n        </div>\r\n\r\n        <div className=\"flex flex-wrap gap-4\">\r\n            <Button className=\"animate-pulse bg-green-500 hover:bg-green-600 text-white\">\r\n                Animated\r\n            </Button>\r\n\r\n            <Button className=\"border-2 border-dashed border-orange-500 bg-transparent text-orange-500 hover:bg-orange-50\">\r\n                Dashed Border\r\n            </Button>\r\n\r\n            <Button className=\"shadow-lg shadow-indigo-500/30 bg-indigo-500 hover:bg-indigo-600 text-white\">\r\n                With Shadow\r\n            </Button>\r\n        </div>\r\n    </div>\r\n);",
+          "description": "Examples of more advanced button styling"
+        }
+      ],
+      "import": "import {\n  ArrowRight,\n  Cloud,\n  CreditCard,\n  Download,\n  Github,\n  Loader2,\n  LogIn,\n  LogOut,\n  Mail,\n  Plus,\n  RotateCcw,\n  Save,\n  Settings,\n  Trash,\n  Upload,\n  User,\n} from 'lucide-react';\nimport { Button } from 'shadbook';"
+    },
+    "research-capstonebutton": {
+      "id": "research-capstonebutton",
+      "name": "Button",
+      "path": "./research-cases/capstone-button.stories.tsx",
+      "jsDocTags": {},
+      "error": {
+        "name": "react-docgen-typescript found no component docs",
+        "message": "File: C:\\Users\\omara\\repos\\bacs496\\capstone-catalogs-codex\\catalogs\\material\\src\\shadcn\\components\\ui\\button.tsx\nreact-docgen-typescript did not return any component docs for this file."
+      },
+      "stories": [
+        {
+          "id": "research-capstonebutton--basic",
+          "name": "Basic",
+          "snippet": "const Basic = () => <Button>Button</Button>;"
+        }
+      ],
+      "import": "import { Button } from 'material-catalog';"
+    },
+    "research-statewrapper": {
+      "id": "research-statewrapper",
+      "name": "StateWrapper",
+      "path": "./research-cases/wrapper.stories.tsx",
+      "jsDocTags": {},
+      "error": {
+        "name": "No component found",
+        "message": "We could not detect the component from your story file. Specify meta.component.\n  2 | import { Button } from '../shadbook/src/components/ui/button';\n  3 | type DemoArgs = { state: 'Basic' | 'Disabled' };\n> 4 | const meta = {\n    | ^\n  5 |   title: 'Research/StateWrapper',\n  6 |   tags: ['autodocs'],\n  7 |   argTypes: { state: { control: 'select', options: ['Basic', 'Disabled'] } },\n\n./research-cases/wrapper.stories.tsx:\nimport type { Meta, StoryObj } from '@storybook/react-vite';\nimport { Button } from '../shadbook/src/components/ui/button';\ntype DemoArgs = { state: 'Basic' | 'Disabled' };\nconst meta = {\n  title: 'Research/StateWrapper',\n  tags: ['autodocs'],\n  argTypes: { state: { control: 'select', options: ['Basic', 'Disabled'] } },\n  args: { state: 'Basic' },\n  render: (args) => <Button disabled={args.state === 'Disabled'}>Demo</Button>,\n} satisfies Meta<DemoArgs>;\nexport default meta;\ntype Story = StoryObj<typeof meta>;\nexport const Basic: Story = {};\n"
+      },
+      "stories": [
+        {
+          "id": "research-statewrapper--basic",
+          "name": "Basic",
+          "snippet": "const Basic = (args) => <Button disabled={args.state === 'Disabled'}>Demo</Button>;"
+        }
+      ],
+      "import": "import { Button } from 'storybook-extraction-research';"
+    }
+  },
+  "meta": {
+    "docgen": "react-docgen-typescript",
+    "durationMs": 4836
+  }
+}
