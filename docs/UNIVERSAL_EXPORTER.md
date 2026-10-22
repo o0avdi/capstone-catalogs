@@ -17,17 +17,28 @@ npm.cmd run a2ui -- export --protocol 1.0 --angular-index angular-index.json --c
 
 To export a subset, supply `--components MaterialButton` and a fresh destination.
 Names, registration names and indexed discovery IDs use the same selector. With
-v1.0, `--all-ready` selects registered Angular source contracts; interactive mode
+v1.0, `--all-ready` selects Angular contracts that pass source extraction and catalog
+validation, including supported unregistered classes; every rejected candidate is
+reported explicitly. Interactive mode
 offers JSON only. Supplying a separate `--react-index` discovers React candidates,
 but React contracts need reviewed source registrations/conversions before v1.0 export.
 
 The official index controls included stories and identity. The exporter matches the
-selected story paths to reviewed registrations, calls the existing `metadata.mjs`
-source extractor, and passes those contracts to `makeCatalogV1`. Discovery fields
+selected story paths to reviewed registrations or resolves an unregistered local
+`meta.component` class. Catalog extraction reuses the `metadata.mjs` compiler/type
+helpers without requiring renderer adapters, fixtures or packaging allowlists,
+and passes those contracts to `makeCatalogV1`. Discovery fields
 inferred from story args never become component schemas. Source initializers supply
 defaults, and the Metric Card's required label/value, number|string unions and
 optional subtitle survive extraction. Button projected text/click mappings and
 Checkbox callback payload/host ownership are retained in diagnostic metadata.
+
+Simple unregistered Angular inputs support primitive types, string unions/enums and
+number|string, decorator requiredness, source defaults and JSDoc. Outputs, projected
+content, callbacks and complex types require review. See
+[automatic Angular catalog support](UNREGISTERED_ANGULAR_CATALOG.md) for exact limits
+and a reproducible example. `catalog.json` is the product; the developer supplies
+their renderer and agent.
 
 Before reporting success, the exporter uses the pinned official v1.0 meta-schema
 validator, structural validator and component-schema compiler. Only lossless field

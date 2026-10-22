@@ -1,12 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { extract } from './metadata.mjs';
+import { createAngularCatalogExtractor } from './angular-catalog.mjs';
 import { makeCatalogV1 } from './catalog-v1.mjs';
 import {
   createCatalogValidator,
   createComponentInstanceValidator,
   validateCatalogStructuralRules,
-  validateRuntimeMappings,
 } from './validate-catalog-v1.mjs';
 
 const json = (value) => JSON.stringify(value, null, 2) + '\n';
@@ -46,11 +46,46 @@ export function validateV1Export(catalog) {
 
 const instructions = 'Use only the components and properties declared in this catalog. ' +
   'Follow each schema for field types, required properties and source defaults; Storybook args are examples. ' +
-  'Button and checkbox labels are projected text. Button actions describe click events. ' +
-  'Checkbox checked state belongs to the host data model; optional change actions emit context.checked. ' +
-  'The host applies data-model updates. Storybook callbacks are never serialized. ' +
+  'Reviewed event/content mappings apply only to components declaring those properties. ' +
+  'The developer implements the renderer and agent. Storybook callbacks are never serialized. ' +
   'Bindings use the A2UI v1.0 @path form. No custom functions are supplied. ' +
   'This export contains catalog JSON only; no v1.0 renderer compatibility is claimed.';
+
+// Used only for readiness discovery/bulk selection. Export re-reads source, so a
+// preflight result can never authorize stale contracts or bypass validation.
+export function assessV1Readiness(root, candidates) {
+  const registrationsFile = path.join(root, 'a2ui/registrations.json');
+  const registrations = fs.existsSync(registrationsFile) ? JSON.parse(fs.readFileSync(registrationsFile, 'utf8')) : [];
+  const unregistered = candidates.filter((c) => c.framework === 'angular' && !c.registrationName);
+  const extractAngular = unregistered.length ? createAngularCatalogExtractor(root, unregistered) : undefined;
+  const results = candidates.map((candidate) => {
+    try {
+      const matches = registrations.filter((r) => normalize(r.story) === candidate.storyPath);
+      let component;
+      if (candidate.framework !== 'angular') throw new Error('React catalog extraction is outside this Angular capability.');
+      if (!matches.length) component = extractAngular(candidate);
+      else {
+        if (matches.length !== 1 || matches[0].name !== candidate.registrationName)
+          throw new Error('No unique reviewed Angular source registration.');
+        const entries = Object.fromEntries(candidate.discovery.stories.map((entry) => [entry.id, entry]));
+        [component] = extract(root, matches, { v: 5, entries }, { catalogOnly: true });
+      }
+      assertV1Convertible([component]);
+      validateV1Export(makeCatalogV1([component], { instructions }));
+      return { id: candidate.id, ready: true, name: component.name };
+    } catch (error) {
+      return { id: candidate.id, ready: false, code: error.code ?? 'UNSUPPORTED_SOURCE_CONTRACT', message: error.message };
+    }
+  });
+  for (const result of results.filter((r) => r.ready)) {
+    if (results.filter((r) => r.name === result.name).length > 1) {
+      result.ready = false;
+      result.code = 'COMPONENT_IDENTITY_COLLISION';
+      result.message = `Multiple indexed sources produce ${result.name}; select an individual identity or supply reviewed unique mappings.`;
+    }
+  }
+  return results;
+}
 
 export function exportV1Selection({ projectRoot, candidates, outputs, output, discovery }) {
   if (!candidates?.length) throw new Error('Select at least one component.');
@@ -74,9 +109,12 @@ export function exportV1Selection({ projectRoot, candidates, outputs, output, di
     const registrationsFile = path.join(root, 'a2ui/registrations.json');
     const registrations = fs.existsSync(registrationsFile) ? JSON.parse(fs.readFileSync(registrationsFile, 'utf8')) : [];
     const selectedRegistrations = [];
+    const unregistered = [];
     for (const candidate of candidates) {
       const matches = registrations.filter((registration) => normalize(registration.story) === candidate.storyPath);
-      if (candidate.framework !== 'angular' || matches.length !== 1 || matches[0].name !== candidate.registrationName) {
+      if (candidate.framework === 'angular' && !matches.length) {
+        unregistered.push(candidate);
+      } else if (candidate.framework !== 'angular' || matches.length !== 1 || matches[0].name !== candidate.registrationName) {
         diagnostics.issues.push({ code: 'UNSUPPORTED_V1_COMPONENT', id: candidate.id, storyPath: candidate.storyPath,
           message: `${candidate.componentName}: no unique reviewed Angular source registration for v1.0. Add a registration with source class/type, bindings and reviewed content/event/callback semantics. Discovery args are examples and cannot define this schema.` });
       } else selectedRegistrations.push({ ...matches[0], story: candidate.storyPath });
@@ -84,11 +122,26 @@ export function exportV1Selection({ projectRoot, candidates, outputs, output, di
     if (diagnostics.issues.length) throw new Error(diagnostics.issues.map((issue) => issue.message).join('\n'));
     // Only indexed stories from selected candidates enter the existing extractor.
     const entries = Object.fromEntries(candidates.flatMap((candidate) => candidate.discovery.stories).map((entry) => [entry.id, entry]));
-    const metadata = extract(root, selectedRegistrations, { v: 5, entries });
+    const metadata = selectedRegistrations.length
+      ? extract(root, selectedRegistrations, { v: 5, entries }, { catalogOnly: true }) : [];
+    if (unregistered.length) {
+      const extractAngular = createAngularCatalogExtractor(root, unregistered);
+      for (const candidate of unregistered) {
+        try {
+          const component = extractAngular(candidate);
+          assertV1Convertible([component]);
+          metadata.push(component);
+        } catch (error) {
+          diagnostics.issues.push({ code: 'UNSUPPORTED_V1_COMPONENT', reasonCode: error.code ?? 'UNSUPPORTED_SOURCE_CONTRACT',
+            id: candidate.id, storyPath: candidate.storyPath, message: error.message });
+        }
+      }
+    }
+    if (diagnostics.issues.length) throw new Error(diagnostics.issues.map((issue) => issue.message).join('\n'));
+    if (new Set(metadata.map((component) => component.name)).size !== metadata.length)
+      throw new Error('Component identity collision: selected source classes/registrations share a catalog name. Select one CSF identity or add a reviewed unique mapping.');
     assertV1Convertible(metadata);
-    const mappings = validateRuntimeMappings(metadata, selectedRegistrations, root);
-    diagnostics.warnings = mappings.warnings;
-    if (!mappings.valid) throw new Error(`Reviewed registration validation failed: ${mappings.issues.join('; ')}`);
+    diagnostics.warnings = metadata.flatMap((component) => component.warnings ?? []);
     const catalog = makeCatalogV1(metadata, { instructions });
     const validation = validateV1Export(catalog);
     const names = metadata.map((component) => component.name).sort();
@@ -96,12 +149,14 @@ export function exportV1Selection({ projectRoot, candidates, outputs, output, di
       throw new Error('Generated catalog components do not match the selected source contracts.');
 
     const components = metadata.map((component) => {
-      const candidate = candidates.find((item) => item.registrationName === component.name);
+      const candidate = candidates.find((item) => item.storyPath === component.story);
       return {
         name: component.name, id: candidate.id, title: candidate.title, framework: candidate.framework,
         storyPath: candidate.storyPath, source: component.source, typeName: component.typeName,
+        className: component.className, sourceIdentity: component.identity,
         storyIds: component.storyIds, discovery: candidate.discovery,
-        contractSource: 'metadata.mjs source extractor and reviewed registration; story args are examples only',
+        contractSource: component.candidateId ? 'Angular compiler source inputs (catalog only); no registration or adapter' :
+          'metadata.mjs source extractor and reviewed registration; story args are examples only',
         content: component.content ?? {}, events: component.events ?? {}, callbacks: component.callbacks,
       };
     });
@@ -109,7 +164,7 @@ export function exportV1Selection({ projectRoot, candidates, outputs, output, di
     fs.mkdirSync(destination, { recursive: true });
     fs.writeFileSync(path.join(destination, 'components.json'), json(components));
     fs.writeFileSync(path.join(destination, 'provenance.json'), json({
-      generatedFrom: 'official Storybook v5 index + registered source contracts',
+      generatedFrom: 'official Storybook v5 index + Angular source contracts',
       indexSources: discovery?.indexSources ?? [],
     }));
     fs.writeFileSync(path.join(destination, 'validation.json'), json(validation));

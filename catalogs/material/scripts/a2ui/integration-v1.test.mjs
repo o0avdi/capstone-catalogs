@@ -155,7 +155,7 @@ test('unsupported real indexed candidate fails the whole selection with actionab
   const result = command(root, output, ['MaterialButton', unsupported.id]);
   assert.notEqual(result.status, 0);
   assert.doesNotMatch(result.stdout, /Exported/);
-  assert.match(result.stderr, /no unique reviewed Angular source registration/);
+  assert.match(result.stderr, /@Output has no reviewed A2UI event\/payload mapping/);
   assert.equal(fs.existsSync(path.join(output, 'catalog.json')), false);
   const diagnostic = read(output, 'diagnostics.json');
   assert.equal(diagnostic.status, 'failed');

@@ -1,5 +1,35 @@
 # Angular Storybook export MVP
 
+### Unregistered Angular catalog-only milestone — October 22, 2026
+
+- Current milestone delivers only the A2UI v1.0 `catalog.json`; the developer owns
+  the renderer and agent. Historical portable-renderer requirements below remain
+  the preserved v0.9 workflow, not requirements for this milestone.
+- [x] Reproduce the pre-change baseline: 45/45 exporter tests passed.
+- [x] Add `extract(..., { catalogOnly: true })` for registered metadata, retaining
+  source/callback checks while bypassing adapter, fixture and packaging requirements.
+- [x] Reuse TypeScript program/literal/type helpers for a bounded unregistered
+  Angular extractor resolving the actual default-exported `meta.component` class.
+- [x] Generate an official v5 index and validated catalog for the isolated
+  `StatusNoteComponent` source fixture, without registration, schema or adapter.
+- [x] Preserve index identities/provenance; refuse outputs, projected content,
+  callbacks, unsupported types and uncertain source semantics with diagnostics.
+- [x] Use actual extraction plus generator/validator preflight for v1.0 `--all-ready`;
+  record rejected candidates explicitly. Renderer ZIP readiness is independent.
+- Focused new tests: 8/8 passed. Combined regression suite: 53/53 passed, zero skips.
+  Final focused rerun after source-ambiguity guards also passed 8/8.
+  Main-project bulk selection exported the existing three contracts and explicitly
+  diagnosed the remaining 47 candidates. Detailed results and reproduction commands
+  are in `research-output/UNREGISTERED_ANGULAR_EXPORT_RESULT.md`.
+- Decision: primitive inputs, homogeneous string literal unions/string enums and
+  number|string are supported; additional types require a reviewed lossless conversion.
+  Source JSDoc/defaults and Angular decorator requiredness are authoritative.
+- Decision: Example Button/Header require output mappings; Finance Panel requires
+  projected-content semantics; charts require complex data contracts. Use an isolated
+  fixture and its own index harness; existing Storybook configurations remain unchanged.
+- No renderer, React manifest, pinned schema, dependency, lockfile or Composer changes.
+  Work remains uncommitted on `feat/a2ui-unregistered-angular`.
+
 ### A2UI v1.0 CLI integration — October 21, 2026
 
 - [x] Establish combined baseline: `npm.cmd run test:a2ui` passed 33/33 before edits.

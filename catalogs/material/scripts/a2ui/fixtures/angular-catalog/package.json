@@ -1,0 +1,5 @@
+{
+  "name": "unregistered-angular-catalog-fixture",
+  "private": true,
+  "description": "Isolated source extraction fixture; no registrations, renderer or dependencies of its own."
+}

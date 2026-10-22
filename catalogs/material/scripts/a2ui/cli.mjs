@@ -5,6 +5,7 @@ import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 import { discoverProject, resolveProjectRoot, selectCandidates } from './discovery.mjs';
 import { exportSelection } from './bundle.mjs';
+import { assessV1Readiness } from './integration-v1.mjs';
 
 const HELP = `Universal Storybook to A2UI exporter
 
@@ -22,7 +23,7 @@ Options:
   --protocol <version>  0.9 (compatibility default) or 1.0 (validated JSON only)
   --outputs <values>    json, zip, or json,zip
   --out <path>          Output directory (default: ./a2ui-export)
-  --all-ready           Select renderer-ready components (v1.0: registered source contracts)
+  --all-ready           Select renderer-ready components (v1.0: validated catalog contracts)
   --json                Print discovery as JSON
   --help                Show this help
 
@@ -216,13 +217,16 @@ export async function run(argv = process.argv.slice(2)) {
     throw new Error('Protocol 1.0 requires an official Storybook index. Supply --angular-index and/or --react-index.');
   const discovery = discoverProject(projectRoot, options);
   if (options.protocol === '1.0') {
+    const preflight = options.command === 'discover' || options.allReady || !options.command;
+    const readiness = preflight ? assessV1Readiness(projectRoot, discovery.candidates) : [];
     // Legacy renderer readiness does not imply v1.0 runtime compatibility.
     for (const candidate of discovery.candidates) {
-      candidate.outputSupport = { json: Boolean(candidate.registrationName) && candidate.framework === 'angular', rendererZip: false };
-      candidate.status = candidate.outputSupport.json ? 'source-contract' : 'needs-configuration';
-      candidate.reasons = [candidate.outputSupport.json
-        ? 'Registered source contract available for v1.0 JSON; v1.0 renderer compatibility is not implemented.'
-        : 'Add a reviewed source registration and v1.0 field mapping before catalog export.'];
+      const result = readiness.find((item) => item.id === candidate.id);
+      candidate.catalogReadiness = result ?? { ready: null, message: 'Source contract will be checked during export.' };
+      candidate.outputSupport = { json: result?.ready ?? false, rendererZip: false };
+      candidate.status = result?.ready ? 'source-contract' : result ? 'needs-configuration' : 'unchecked';
+      candidate.reasons = [result?.ready ? 'Source contract passed v1.0 catalog validation; renderer is developer-owned.' : candidate.catalogReadiness.message];
+      if (result && !result.ready) discovery.diagnostics.push({ code: result.code, id: candidate.id, message: `${candidate.id}: ${result.message}` });
     }
     discovery.summary.portable = 0;
     discovery.summary.custom = 0;

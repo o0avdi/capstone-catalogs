@@ -20,12 +20,12 @@ export function discover(index, registrations) {
     return { ...r, storyIds: ids };
   });
 }
-function unwrap(n) {
+export function unwrap(n) {
   while (ts.isAsExpression(n) || ts.isSatisfiesExpression(n) || ts.isParenthesizedExpression(n))
     n = n.expression;
   return n;
 }
-function property(node, name) {
+export function property(node, name) {
   const p = unwrap(node).properties?.find(
     (p) => p.name?.getText().replace(/^['"]|['"]$/g, '') === name,
   );
@@ -56,14 +56,14 @@ export function literal(node, context) {
     `${context}: unsupported metadata expression ${node.getText()}; use a literal or explicit registration.`,
   );
 }
-function typeSchema(type, checker, context) {
+export function typeSchema(type, checker, context) {
   if (type.isUnion()) {
     const schemas = type.types
       .filter((t) => !(t.flags & ts.TypeFlags.Undefined))
       .map((t) => typeSchema(t, checker, context));
     if (schemas.length === 2 && schemas.every((s) => s.type === 'boolean'))
       return { type: 'boolean' };
-    if (schemas.every((s) => 'const' in s))
+    if (schemas.length && schemas.every((s) => 'const' in s && s.type === schemas[0].type))
       return { type: typeof schemas[0].const, enum: schemas.map((s) => s.const) };
     const types = [...new Set(schemas.map((s) => s.type))];
     if (schemas.every((s) => Object.keys(s).length === 1))
@@ -81,8 +81,21 @@ function typeSchema(type, checker, context) {
     `${context}: unsupported type ${checker.typeToString(type)}; add an explicit schema and runtime mapping.`,
   );
 }
-export function extract(root, registrations, index) {
+export function createMetadataProgram(files) {
+  return ts.createProgram(files, {
+    experimentalDecorators: true, strictNullChecks: true, target: ts.ScriptTarget.ES2022,
+  });
+}
+
+// Catalog extraction keeps reviewed source/event mappings but does not require
+// packaging inputs. Legacy callers retain all adapter and portability checks.
+export function extract(root, registrations, index, { catalogOnly = false } = {}) {
   for (const r of registrations) {
+    for (const file of [r.story, r.source].filter(Boolean))
+      if (path.isAbsolute(file) || file.split(/[\\/]/).includes('..'))
+        throw new Error(r.name + ': source paths must be relative and inside the project: ' + file);
+  }
+  for (const r of catalogOnly ? [] : registrations) {
     if (
       !/^[A-Za-z_$][\w$]*$/.test(r.adapter) ||
       !r.adapterFile ||
@@ -146,11 +159,10 @@ export function extract(root, registrations, index) {
   const selected = discover(index, registrations);
   if (new Set(selected.map((r) => r.name)).size !== selected.length)
     throw new Error('Component identity collision in registrations.');
-  if (new Set(selected.map((r) => r.adapterOutput)).size !== selected.length)
+  if (!catalogOnly && new Set(selected.map((r) => r.adapterOutput)).size !== selected.length)
     throw new Error('Adapter output collision in registrations');
-  const program = ts.createProgram(
+  const program = createMetadataProgram(
     selected.flatMap((r) => [r.story, r.source].filter(Boolean).map((f) => path.join(root, f))),
-    { experimentalDecorators: true, strictNullChecks: true, target: ts.ScriptTarget.ES2022 },
   );
   const checker = program.getTypeChecker();
   return selected.map((r) => {
