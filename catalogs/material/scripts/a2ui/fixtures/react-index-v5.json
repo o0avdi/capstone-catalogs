@@ -1,0 +1,79 @@
+{
+  "v": 5,
+  "entries": {
+    "shadcn-button--documentation": {
+      "id": "shadcn-button--documentation",
+      "title": "Shadcn/Button",
+      "name": "Documentation",
+      "importPath": "./src/stories/Shadcn/button.stories.tsx",
+      "type": "docs",
+      "tags": [
+        "dev",
+        "test",
+        "manifest",
+        "autodocs"
+      ],
+      "storiesImports": []
+    },
+    "shadcn-button--basic": {
+      "type": "story",
+      "subtype": "story",
+      "id": "shadcn-button--basic",
+      "name": "Basic",
+      "title": "Shadcn/Button",
+      "importPath": "./src/stories/Shadcn/button.stories.tsx",
+      "tags": [
+        "dev",
+        "test",
+        "manifest",
+        "autodocs"
+      ],
+      "exportName": "Basic"
+    },
+    "shadcn-button--variants": {
+      "type": "story",
+      "subtype": "story",
+      "id": "shadcn-button--variants",
+      "name": "Variants",
+      "title": "Shadcn/Button",
+      "importPath": "./src/stories/Shadcn/button.stories.tsx",
+      "tags": [
+        "dev",
+        "test",
+        "manifest",
+        "autodocs"
+      ],
+      "exportName": "Variants"
+    },
+    "shadcn-button--disabled": {
+      "type": "story",
+      "subtype": "story",
+      "id": "shadcn-button--disabled",
+      "name": "Disabled",
+      "title": "Shadcn/Button",
+      "importPath": "./src/stories/Shadcn/button.stories.tsx",
+      "tags": [
+        "dev",
+        "test",
+        "manifest",
+        "autodocs"
+      ],
+      "exportName": "Disabled"
+    },
+    "shadcn-button--loading": {
+      "type": "story",
+      "subtype": "story",
+      "id": "shadcn-button--loading",
+      "name": "Loading",
+      "title": "Shadcn/Button",
+      "importPath": "./src/stories/Shadcn/button.stories.tsx",
+      "tags": [
+        "dev",
+        "test",
+        "manifest",
+        "autodocs"
+      ],
+      "exportName": "Loading"
+    }
+  }
+}

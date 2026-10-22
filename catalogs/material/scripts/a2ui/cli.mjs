@@ -15,6 +15,9 @@ Usage:
 
 Options:
   --project <path>       Project directory (defaults to the current directory)
+  --angular-index <file> Official local Angular v5 index (relative to project)
+  --react-index <file>   Separate local React v5 index (relative to project)
+  --static-discovery    Explicit reduced-confidence static fallback (no indexes)
   --components <names>  Comma-separated discovery ids or component names
   --outputs <values>    json, zip, or json,zip
   --out <path>          Output directory (default: ./a2ui-export)
@@ -37,6 +40,11 @@ export function parseArguments(argv) {
     if (value === '--help' || value === '-h') options.help = true;
     else if (value === '--json') options.json = true;
     else if (value === '--all-ready') options.allReady = true;
+    else if (value === '--static-discovery') options.staticDiscovery = true;
+    else if (value === '--angular-index' || value === '--react-index') {
+      options.indexes ??= [];
+      options.indexes.push({ framework: value === '--angular-index' ? 'angular' : 'react', file: requiredValue(value, args.shift()) });
+    }
     else if (value === '--project') options.project = requiredValue(value, args.shift());
     else if (value === '--components')
       options.components = requiredValue(value, args.shift()).split(',').map((item) => item.trim()).filter(Boolean);
@@ -61,6 +69,8 @@ function statusLabel(candidate) {
 }
 
 function printDiscovery(discovery) {
+  console.log(`Discovery: ${discovery.generatedFrom}`);
+  for (const diagnostic of discovery.diagnostics) console.error(`[${diagnostic.code}] ${diagnostic.message ?? diagnostic.id}`);
   console.log(`Discovered ${discovery.summary.total} component story files:`);
   for (const library of [...new Set(discovery.candidates.map((candidate) => candidate.library))]) {
     console.log(`\n${library}`);
@@ -196,12 +206,13 @@ export async function run(argv = process.argv.slice(2)) {
     return;
   }
   const projectRoot = resolveProjectRoot(options.project ?? process.cwd());
-  const discovery = discoverProject(projectRoot);
+  const discovery = discoverProject(projectRoot, options);
   if (options.command === 'discover') {
     if (options.json) console.log(JSON.stringify(discovery, null, 2));
     else printDiscovery(discovery);
     return;
   }
+  for (const diagnostic of discovery.diagnostics) console.error(`[${diagnostic.code}] ${diagnostic.message ?? diagnostic.id}`);
   const output = path.resolve(options.out ?? path.join(projectRoot, 'a2ui-export'));
   let candidates;
   let outputs;

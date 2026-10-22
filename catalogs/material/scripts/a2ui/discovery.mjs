@@ -1,6 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import ts from 'typescript';
+import { createHash } from 'node:crypto';
+import { readStorybookIndex } from './storybook-index.mjs';
 
 const STORY_PATTERN = /\.stories\.(?:[cm]?[jt]sx?)$/i;
 const SKIP_DIRECTORIES = new Set([
@@ -102,7 +104,7 @@ function registrations(root) {
   return JSON.parse(fs.readFileSync(file, 'utf8'));
 }
 
-function parseStory(root, filename, knownRegistrations) {
+function parseStory(root, filename, knownRegistrations, indexed) {
   const storyPath = posix(path.relative(root, filename));
   const extension = path.extname(filename).toLowerCase();
   const source = fs.readFileSync(filename, 'utf8');
@@ -119,8 +121,8 @@ function parseStory(root, filename, knownRegistrations) {
     )
     .find((declaration) => declaration.name.getText() === 'meta');
   const meta = unwrap(metaDeclaration?.initializer);
-  const title = literal(property(meta, 'title')) ?? storyPath.replace(STORY_PATTERN, '');
-  const framework = extension.endsWith('x') ? 'react' : 'angular';
+  const title = indexed?.stories[0].title ?? literal(property(meta, 'title')) ?? storyPath.replace(STORY_PATTERN, '');
+  const framework = indexed?.framework ?? (extension.endsWith('x') ? 'react' : 'angular');
   const library = title.startsWith('Shadcn/')
     ? 'shadcn'
     : title.startsWith('Material/')
@@ -130,7 +132,7 @@ function parseStory(root, filename, knownRegistrations) {
         : 'angular';
   const args = literal(property(meta, 'args')) ?? {};
   const argTypes = literal(property(meta, 'argTypes')) ?? {};
-  const variants = ast.statements
+  const variants = indexed ? indexed.stories.map((entry) => entry.exportName ?? entry.name) : ast.statements
     .filter(
       (statement) =>
         ts.isVariableStatement(statement) &&
@@ -176,7 +178,7 @@ function parseStory(root, filename, knownRegistrations) {
           ]
         : ['A2UI JSON can be generated, but a reviewed renderer adapter is still required for ZIP export.'];
   return {
-    id: `${library}:${storyPath}`,
+    id: `${indexed ? framework : library}:${storyPath}`,
     name: leafName,
     componentName,
     title,
@@ -198,6 +200,12 @@ function parseStory(root, filename, knownRegistrations) {
     status,
     reasons,
     outputSupport: { json: true, rendererZip: rendererSupported },
+    discovery: indexed ? {
+      mode: 'storybook-index', ...indexed.provenance,
+      stories: indexed.stories, docs: indexed.docs,
+      identityBasis: 'project/framework/importPath; componentPath is an observation, not an export identity',
+    } : { mode: 'static-fallback', confidence: 'reduced' },
+    ...(indexed ? { storyIds: indexed.stories.map((entry) => entry.id) } : {}),
   };
 }
 
@@ -209,14 +217,50 @@ export function resolveProjectRoot(input = process.cwd()) {
   throw new Error(`No supported project found at ${candidate}. Expected package.json or catalogs/material/package.json.`);
 }
 
-export function discoverProject(input = process.cwd()) {
+export function discoverProject(input = process.cwd(), { indexes = [], staticDiscovery = false } = {}) {
   const root = resolveProjectRoot(input);
   const knownRegistrations = registrations(root);
+  if (staticDiscovery && indexes.length) throw new Error('Choose index discovery or static fallback, not both.');
+  const sources = indexes.map((source) => readStorybookIndex(root, source));
+  const diagnostics = sources.flatMap((source) => source.diagnostics);
+  if (!sources.length) diagnostics.push({ code: 'STATIC_DISCOVERY_FALLBACK',
+    message: 'Static fallback used: configured inclusions, story IDs, export filters and framework identity are unverified. Supply --angular-index and/or --react-index.' });
   const storyRoot = path.join(root, 'src');
-  if (!fs.existsSync(storyRoot)) throw new Error(`No src directory found in ${root}.`);
-  const candidates = walk(storyRoot)
-    .map((filename) => parseStory(root, filename, knownRegistrations))
+  if (!sources.length && !fs.existsSync(storyRoot)) throw new Error(`No src directory found in ${root}.`);
+  const seen = new Set();
+  const storyIds = new Set();
+  const candidates = (sources.length ? sources.flatMap((source) =>
+    [...source.groups].map(([storyPath, stories]) => {
+      if (seen.has(storyPath)) throw new Error(`Story path collision across indexes: ${storyPath}. Supply each local story project once.`);
+      seen.add(storyPath);
+      for (const story of stories) {
+        const key = `${source.provenance.framework}:${story.id}`;
+        if (storyIds.has(key)) throw new Error(`Story ID collision across indexes: ${key}.`);
+        storyIds.add(key);
+      }
+      return parseStory(root, path.join(root, storyPath), knownRegistrations, {
+        stories, framework: source.provenance.framework, provenance: source.provenance,
+        docs: source.docs.filter((entry) => entry.importPath.replaceAll('\\', '/').replace(/^\.\//, '') === storyPath ||
+          entry.storiesImports?.some((value) => value.replaceAll('\\', '/').replace(/^\.\//, '') === storyPath)),
+      });
+    })) : walk(storyRoot).map((filename) => parseStory(root, filename, knownRegistrations)))
     .sort((a, b) => a.id.localeCompare(b.id));
+  if (sources.length) {
+    for (const candidate of candidates) {
+      const stories = candidate.discovery.stories;
+      const componentPath = stories[0].componentPath;
+      if (!componentPath && !candidate.registrationName) diagnostics.push({
+        code: 'COMPONENT_IDENTITY_UNRESOLVED', id: candidate.id,
+        message: 'Indexed CSF identity is known; underlying component identity requires a reviewed mapping.',
+      });
+      const related = candidates.filter((other) => other !== candidate &&
+        other.framework === candidate.framework && (other.title === candidate.title ||
+          (componentPath && other.discovery.stories.some((entry) => entry.componentPath === componentPath))));
+      if (related.length) diagnostics.push({ code: 'COMPONENT_IDENTITY_REQUIRES_REVIEW', id: candidate.id,
+        related: related.map((other) => other.id),
+        message: 'CSF files remain separate: a shared title/component path does not establish a shared component export.' });
+    }
+  }
   const collisions = new Map();
   for (const candidate of candidates) {
     const matches = collisions.get(candidate.componentName) ?? [];
@@ -229,10 +273,20 @@ export function discoverProject(input = process.cwd()) {
         candidate.componentName = `${name}${safeIdentifier(path.basename(candidate.storyPath).split('.')[0])}`;
         candidate.reasons.push(`The generated name ${name} collided and was qualified by source file.`);
       }
+  // File basenames can also collide; retain deterministic, unique selection names.
+  const names = new Map();
+  for (const candidate of candidates) names.set(candidate.componentName, (names.get(candidate.componentName) ?? 0) + 1);
+  for (const candidate of candidates) if (names.get(candidate.componentName) > 1) {
+    candidate.componentName += createHash('sha256').update(candidate.id).digest('hex').slice(0, 12);
+    candidate.reasons.push('Name collision qualified with a stable discovery identity hash.');
+  }
   return {
     schemaVersion: 1,
     projectRoot: root,
-    generatedFrom: 'static Storybook CSF discovery',
+    generatedFrom: sources.length ? 'official Storybook v5 index' : 'static Storybook CSF discovery (fallback)',
+    fallbackUsed: !sources.length,
+    diagnostics,
+    indexSources: sources.map((source) => ({ ...source.provenance, docs: source.docs })),
     candidates,
     summary: {
       total: candidates.length,

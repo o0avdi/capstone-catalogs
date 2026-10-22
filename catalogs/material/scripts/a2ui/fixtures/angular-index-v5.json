@@ -1,0 +1,309 @@
+{
+  "v": 5,
+  "entries": {
+    "configure-your-project--docs": {
+      "id": "configure-your-project--docs",
+      "title": "Configure your project",
+      "name": "Docs",
+      "importPath": "./src/stories/Configure.mdx",
+      "storiesImports": [],
+      "type": "docs",
+      "tags": [
+        "dev",
+        "test",
+        "manifest",
+        "unattached-mdx"
+      ]
+    },
+    "finance-components-metric-card--docs": {
+      "id": "finance-components-metric-card--docs",
+      "title": "Finance/Components/Metric Card",
+      "name": "Docs",
+      "importPath": "./src/stories/finance/metric-card.stories.ts",
+      "type": "docs",
+      "tags": [
+        "dev",
+        "test",
+        "manifest",
+        "autodocs"
+      ],
+      "storiesImports": []
+    },
+    "finance-components-metric-card--revenue": {
+      "type": "story",
+      "subtype": "story",
+      "id": "finance-components-metric-card--revenue",
+      "name": "Revenue",
+      "title": "Finance/Components/Metric Card",
+      "importPath": "./src/stories/finance/metric-card.stories.ts",
+      "componentPath": "./src/app/finance/components/metric-card.component.ts",
+      "tags": [
+        "dev",
+        "test",
+        "manifest",
+        "autodocs"
+      ],
+      "exportName": "Revenue"
+    },
+    "finance-components-metric-card--operating-profit": {
+      "type": "story",
+      "subtype": "story",
+      "id": "finance-components-metric-card--operating-profit",
+      "name": "Operating Profit",
+      "title": "Finance/Components/Metric Card",
+      "importPath": "./src/stories/finance/metric-card.stories.ts",
+      "componentPath": "./src/app/finance/components/metric-card.component.ts",
+      "tags": [
+        "dev",
+        "test",
+        "manifest",
+        "autodocs"
+      ],
+      "exportName": "OperatingProfit"
+    },
+    "finance-components-metric-card--expense-increase": {
+      "type": "story",
+      "subtype": "story",
+      "id": "finance-components-metric-card--expense-increase",
+      "name": "Expense Increase",
+      "title": "Finance/Components/Metric Card",
+      "importPath": "./src/stories/finance/metric-card.stories.ts",
+      "componentPath": "./src/app/finance/components/metric-card.component.ts",
+      "tags": [
+        "dev",
+        "test",
+        "manifest",
+        "autodocs"
+      ],
+      "exportName": "ExpenseIncrease"
+    },
+    "finance-components-metric-card--margin": {
+      "type": "story",
+      "subtype": "story",
+      "id": "finance-components-metric-card--margin",
+      "name": "Margin",
+      "title": "Finance/Components/Metric Card",
+      "importPath": "./src/stories/finance/metric-card.stories.ts",
+      "componentPath": "./src/app/finance/components/metric-card.component.ts",
+      "tags": [
+        "dev",
+        "test",
+        "manifest",
+        "autodocs"
+      ],
+      "exportName": "Margin"
+    },
+    "finance-components-metric-card--absolute-change": {
+      "type": "story",
+      "subtype": "story",
+      "id": "finance-components-metric-card--absolute-change",
+      "name": "Absolute Change",
+      "title": "Finance/Components/Metric Card",
+      "importPath": "./src/stories/finance/metric-card.stories.ts",
+      "componentPath": "./src/app/finance/components/metric-card.component.ts",
+      "tags": [
+        "dev",
+        "test",
+        "manifest",
+        "autodocs"
+      ],
+      "exportName": "AbsoluteChange"
+    },
+    "finance-components-metric-card--neutral": {
+      "type": "story",
+      "subtype": "story",
+      "id": "finance-components-metric-card--neutral",
+      "name": "Neutral",
+      "title": "Finance/Components/Metric Card",
+      "importPath": "./src/stories/finance/metric-card.stories.ts",
+      "componentPath": "./src/app/finance/components/metric-card.component.ts",
+      "tags": [
+        "dev",
+        "test",
+        "manifest",
+        "autodocs"
+      ],
+      "exportName": "Neutral"
+    },
+    "finance-components-metric-card--large-value": {
+      "type": "story",
+      "subtype": "story",
+      "id": "finance-components-metric-card--large-value",
+      "name": "Large Value",
+      "title": "Finance/Components/Metric Card",
+      "importPath": "./src/stories/finance/metric-card.stories.ts",
+      "componentPath": "./src/app/finance/components/metric-card.component.ts",
+      "tags": [
+        "dev",
+        "test",
+        "manifest",
+        "autodocs"
+      ],
+      "exportName": "LargeValue"
+    },
+    "finance-components-metric-card--euro-formatting": {
+      "type": "story",
+      "subtype": "story",
+      "id": "finance-components-metric-card--euro-formatting",
+      "name": "Euro Formatting",
+      "title": "Finance/Components/Metric Card",
+      "importPath": "./src/stories/finance/metric-card.stories.ts",
+      "componentPath": "./src/app/finance/components/metric-card.component.ts",
+      "tags": [
+        "dev",
+        "test",
+        "manifest",
+        "autodocs"
+      ],
+      "exportName": "EuroFormatting"
+    },
+    "material-button--docs": {
+      "id": "material-button--docs",
+      "title": "Material/Button",
+      "name": "Docs",
+      "importPath": "./src/stories/material/button.stories.ts",
+      "type": "docs",
+      "tags": [
+        "dev",
+        "test",
+        "manifest",
+        "autodocs"
+      ],
+      "storiesImports": []
+    },
+    "material-button--filled": {
+      "type": "story",
+      "subtype": "story",
+      "id": "material-button--filled",
+      "name": "Filled",
+      "title": "Material/Button",
+      "importPath": "./src/stories/material/button.stories.ts",
+      "tags": [
+        "dev",
+        "test",
+        "manifest",
+        "autodocs"
+      ],
+      "exportName": "Filled"
+    },
+    "material-button--disabled": {
+      "type": "story",
+      "subtype": "story",
+      "id": "material-button--disabled",
+      "name": "Disabled",
+      "title": "Material/Button",
+      "importPath": "./src/stories/material/button.stories.ts",
+      "tags": [
+        "dev",
+        "test",
+        "manifest",
+        "autodocs"
+      ],
+      "exportName": "Disabled"
+    },
+    "material-button--outlined": {
+      "type": "story",
+      "subtype": "story",
+      "id": "material-button--outlined",
+      "name": "Outlined",
+      "title": "Material/Button",
+      "importPath": "./src/stories/material/button.stories.ts",
+      "tags": [
+        "dev",
+        "test",
+        "manifest",
+        "autodocs"
+      ],
+      "exportName": "Outlined"
+    },
+    "material-button--long-label": {
+      "type": "story",
+      "subtype": "story",
+      "id": "material-button--long-label",
+      "name": "Long Label",
+      "title": "Material/Button",
+      "importPath": "./src/stories/material/button.stories.ts",
+      "tags": [
+        "dev",
+        "test",
+        "manifest",
+        "autodocs"
+      ],
+      "exportName": "LongLabel"
+    },
+    "material-checkbox--docs": {
+      "id": "material-checkbox--docs",
+      "title": "Material/Checkbox",
+      "name": "Docs",
+      "importPath": "./src/stories/material/checkbox.stories.ts",
+      "type": "docs",
+      "tags": [
+        "dev",
+        "test",
+        "manifest",
+        "autodocs"
+      ],
+      "storiesImports": []
+    },
+    "material-checkbox--unchecked": {
+      "type": "story",
+      "subtype": "story",
+      "id": "material-checkbox--unchecked",
+      "name": "Unchecked",
+      "title": "Material/Checkbox",
+      "importPath": "./src/stories/material/checkbox.stories.ts",
+      "tags": [
+        "dev",
+        "test",
+        "manifest",
+        "autodocs"
+      ],
+      "exportName": "Unchecked"
+    },
+    "material-checkbox--checked": {
+      "type": "story",
+      "subtype": "story",
+      "id": "material-checkbox--checked",
+      "name": "Checked",
+      "title": "Material/Checkbox",
+      "importPath": "./src/stories/material/checkbox.stories.ts",
+      "tags": [
+        "dev",
+        "test",
+        "manifest",
+        "autodocs"
+      ],
+      "exportName": "Checked"
+    },
+    "material-checkbox--disabled-checked": {
+      "type": "story",
+      "subtype": "story",
+      "id": "material-checkbox--disabled-checked",
+      "name": "Disabled Checked",
+      "title": "Material/Checkbox",
+      "importPath": "./src/stories/material/checkbox.stories.ts",
+      "tags": [
+        "dev",
+        "test",
+        "manifest",
+        "autodocs"
+      ],
+      "exportName": "DisabledChecked"
+    },
+    "material-checkbox--long-label": {
+      "type": "story",
+      "subtype": "story",
+      "id": "material-checkbox--long-label",
+      "name": "Long Label",
+      "title": "Material/Checkbox",
+      "importPath": "./src/stories/material/checkbox.stories.ts",
+      "tags": [
+        "dev",
+        "test",
+        "manifest",
+        "autodocs"
+      ],
+      "exportName": "LongLabel"
+    }
+  }
+}

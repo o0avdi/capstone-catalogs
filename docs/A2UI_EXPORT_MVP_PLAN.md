@@ -1,5 +1,23 @@
 # Angular Storybook export MVP
 
+### Official index discovery implementation — October 20, 2026
+
+- Universal discovery now accepts supplied official Storybook v5 index artifacts through
+  `--angular-index` and `--react-index`. The two configurations remain separate; local
+  Angular composition does not imply local React index entries.
+- Index paths/variants are authoritative. Preserve full entries, version/SHA-256,
+  associated docs and standalone documentation provenance without executing stories.
+  Stable candidate identity uses framework and CSF import path. Shared titles/component
+  paths across CSF files require review; do not infer a shared component export.
+- Static scanning remains the compatibility fallback, with explicit fallback diagnostics
+  and `--static-discovery`. Invalid supplied artifacts fail without fallback.
+- Validation: baseline 18/18 passed; implementation suite 26/26 passed. Official installed
+  Storybook 10.6 index commands passed for both unchanged configurations. Combined
+  discovery found 50 Angular and 64 React candidates; indexed MaterialButton CLI JSON
+  export passed. See `research-output/codex-storybook/INDEX_IMPLEMENTATION_RESULT.md`.
+- Catalog versions/contracts, source metadata extraction, adapters and packaging are
+  unchanged. A2UI v1.0 generator/validator integration is a separate workstream.
+
 ## Outcome and deadline
 
 By Wednesday evening, October 14, 2026 Eastern, aim to have a reproducible export ready for a recorded class demo on Thursday, October 15. The user does not require a live demo.
