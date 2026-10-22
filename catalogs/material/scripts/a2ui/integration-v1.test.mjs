@@ -68,7 +68,7 @@ test('one CLI command exports all three real indexed source contracts as validat
   assert.equal(catalog.catalogId, catalogV1Id);
   assert.equal(catalog.$id, catalogV1Id);
   assert.deepEqual(Object.keys(catalog.components), names);
-  assert.deepEqual(createCatalogValidator()(catalog), { valid: true, errors: [] });
+  assert.deepEqual(createCatalogValidator()(catalog), { valid: true, errors: [],  metaErrors: [],  referenceErrors: []});
   assert.equal(read(output, 'validation.json').componentSchemasCompiled, true);
   assert.equal(read(output, 'diagnostics.json').status, 'success');
   assert.equal(read(output, 'diagnostics.json').renderer.available, false);
