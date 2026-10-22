@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { archive } from './zip.mjs';
+import { exportV1Selection } from './integration-v1.mjs';
 import {
   makeDiagnostics,
   makeMessages,
@@ -163,7 +164,9 @@ function writeRootFiles(stage, candidates, catalog, messages, diagnostics) {
   );
 }
 
-export function exportSelection({ projectRoot, candidates, outputs, output }) {
+export function exportSelection({ projectRoot, candidates, outputs, output, protocol = '0.9', discovery }) {
+  if (protocol === '1.0') return exportV1Selection({ projectRoot, candidates, outputs, output, discovery });
+  if (protocol !== '0.9') throw new Error('Protocol must be 0.9 or 1.0.');
   if (!candidates.length) throw new Error('Select at least one component.');
   const requested = new Set(outputs);
   if (![...requested].every((name) => ['json', 'zip'].includes(name)))

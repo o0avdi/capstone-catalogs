@@ -1,5 +1,65 @@
 # Universal A2UI exporter
 
+## A2UI v1.0 JSON workflow
+
+Use `--protocol 1.0` for the integrated October sprint workflow. The compatibility
+default remains v0.9 so existing JSON/ZIP automation and the verified renderer path
+continue to work. `npm.cmd run export:a2ui` is also the legacy portable exporter;
+use `npm.cmd run a2ui -- export --protocol 1.0` for v1.0.
+
+PowerShell, from `catalogs/material`:
+
+```powershell
+.\node_modules\.bin\storybook.cmd index --config-dir .storybook --output-file angular-index.json
+npm.cmd run a2ui -- discover --protocol 1.0 --angular-index angular-index.json --json
+npm.cmd run a2ui -- export --protocol 1.0 --angular-index angular-index.json --components FinanceMetricCard,MaterialButton,MaterialCheckbox --outputs json --out ./a2ui-v1-export
+```
+
+To export a subset, supply `--components MaterialButton` and a fresh destination.
+Names, registration names and indexed discovery IDs use the same selector. With
+v1.0, `--all-ready` selects registered Angular source contracts; interactive mode
+offers JSON only. Supplying a separate `--react-index` discovers React candidates,
+but React contracts need reviewed source registrations/conversions before v1.0 export.
+
+The official index controls included stories and identity. The exporter matches the
+selected story paths to reviewed registrations, calls the existing `metadata.mjs`
+source extractor, and passes those contracts to `makeCatalogV1`. Discovery fields
+inferred from story args never become component schemas. Source initializers supply
+defaults, and the Metric Card's required label/value, number|string unions and
+optional subtitle survive extraction. Button projected text/click mappings and
+Checkbox callback payload/host ownership are retained in diagnostic metadata.
+
+Before reporting success, the exporter uses the pinned official v1.0 meta-schema
+validator, structural validator and component-schema compiler. Only lossless field
+shapes supported by the current generator are accepted; unsupported types/constraints
+fail with instructions to add a reviewed conversion. There is no LLM/API-key step.
+
+Successful v1.0 destinations contain exactly:
+
+```text
+catalog.json       One authoritative A2UI v1.0 catalog
+components.json    Selected indexed identities and reviewed content/event/callback mappings
+provenance.json    Official index version, SHA-256, docs and origin
+diagnostics.json   Export status, source warnings and explicit renderer limitation
+validation.json    Official meta-schema/structural results and component compilation result
+```
+
+The catalogId is the existing generator's stable
+`https://capstone.example/catalogs/finance-material/1.0.0`, including subset exports;
+check `protocolVersion` for wire version. It is not a content hash or a separately
+hosted catalog per subset. Each destination contains one selected component set.
+
+V1.0 emits no example wire messages, legacy catalog, ZIP or renderer. Requests for
+`--outputs zip` or `json,zip` fail because the existing runtimes use v0.9 and have
+not been tested against v1.0. Unsupported selected components fail the whole export
+with actionable `diagnostics.json`; they are never silently omitted. Failed extraction
+or validation does not publish a catalog. Invalid arguments/indexes and nonempty
+destinations fail before writing. Always use a fresh destination, preventing stale
+v0.9 messages or catalogs from being mixed into a v1.0 result.
+
+The following output/renderer sections describe the retained **v0.9 compatibility
+workflow**. Validation of a v1.0 JSON catalog does not establish renderer compatibility.
+
 ## Product contract
 
 The CLI has one discovery and selection experience for Angular Material and React/Shadcn Storybook sources. It does not equate “a TSX file exists” with “a safe renderer exists.” Static discovery groups story variants, connects known registrations, records direct source files when they can be resolved, and reports output support before writing anything.

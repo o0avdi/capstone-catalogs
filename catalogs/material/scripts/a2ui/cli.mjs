@@ -19,9 +19,10 @@ Options:
   --react-index <file>   Separate local React v5 index (relative to project)
   --static-discovery    Explicit reduced-confidence static fallback (no indexes)
   --components <names>  Comma-separated discovery ids or component names
+  --protocol <version>  0.9 (compatibility default) or 1.0 (validated JSON only)
   --outputs <values>    json, zip, or json,zip
   --out <path>          Output directory (default: ./a2ui-export)
-  --all-ready           Select every component that has renderer ZIP support
+  --all-ready           Select renderer-ready components (v1.0: registered source contracts)
   --json                Print discovery as JSON
   --help                Show this help
 
@@ -46,6 +47,10 @@ export function parseArguments(argv) {
       options.indexes.push({ framework: value === '--angular-index' ? 'angular' : 'react', file: requiredValue(value, args.shift()) });
     }
     else if (value === '--project') options.project = requiredValue(value, args.shift());
+    else if (value === '--protocol') {
+      options.protocol = requiredValue(value, args.shift());
+      if (!['0.9', '1.0'].includes(options.protocol)) throw new Error('Protocol must be 0.9 or 1.0.');
+    }
     else if (value === '--components')
       options.components = requiredValue(value, args.shift()).split(',').map((item) => item.trim()).filter(Boolean);
     else if (value === '--outputs')
@@ -64,7 +69,7 @@ function requiredValue(flag, value) {
 }
 
 function statusLabel(candidate) {
-  const suffix = candidate.outputSupport.rendererZip ? 'JSON + ZIP' : 'JSON only';
+  const suffix = !candidate.outputSupport.json ? 'source mapping required' : candidate.outputSupport.rendererZip ? 'JSON + ZIP' : 'JSON only';
   return `${candidate.status}; ${suffix}`;
 }
 
@@ -82,7 +87,8 @@ function printDiscovery(discovery) {
   console.log(
     `\nAngular: ${discovery.summary.angular}  React/TSX: ${discovery.summary.react}  ` +
       `Portable: ${discovery.summary.portable}  Custom: ${discovery.summary.custom}  ` +
-      `Needs configuration: ${discovery.summary.needsConfiguration}`,
+      `Needs configuration: ${discovery.summary.needsConfiguration}` +
+      (discovery.summary.sourceContracts === undefined ? '' : `  Source contracts: ${discovery.summary.sourceContracts}`),
   );
 }
 
@@ -168,19 +174,19 @@ async function confirm(summary) {
   }
 }
 
-async function interactive(discovery, output) {
+async function interactive(discovery, output, protocol) {
   const componentItems = discovery.candidates.map((candidate) => ({
     value: candidate.id,
     label: `${candidate.componentName} — ${candidate.library} — ${statusLabel(candidate)}`,
   }));
   const ids = await checklist('Select components', componentItems, { actionLabel: 'Choose outputs' });
   const candidates = selectCandidates(discovery, ids);
-  const outputItems = [
+  const outputItems = protocol === '1.0' ? [{ value: 'json', label: 'Validated A2UI v1.0 catalog JSON' }] : [
     { value: 'json', label: 'Loose A2UI JSON files' },
     { value: 'zip', label: 'Self-contained renderer ZIP' },
   ];
   const outputs = await checklist('Select outputs', outputItems, {
-    initial: ['json', 'zip'],
+    initial: protocol === '1.0' ? ['json'] : ['json', 'zip'],
     actionLabel: 'Review export',
   });
   const unsupported = candidates.filter(
@@ -206,7 +212,23 @@ export async function run(argv = process.argv.slice(2)) {
     return;
   }
   const projectRoot = resolveProjectRoot(options.project ?? process.cwd());
+  if (options.protocol === '1.0' && (!options.indexes?.length || options.staticDiscovery))
+    throw new Error('Protocol 1.0 requires an official Storybook index. Supply --angular-index and/or --react-index.');
   const discovery = discoverProject(projectRoot, options);
+  if (options.protocol === '1.0') {
+    // Legacy renderer readiness does not imply v1.0 runtime compatibility.
+    for (const candidate of discovery.candidates) {
+      candidate.outputSupport = { json: Boolean(candidate.registrationName) && candidate.framework === 'angular', rendererZip: false };
+      candidate.status = candidate.outputSupport.json ? 'source-contract' : 'needs-configuration';
+      candidate.reasons = [candidate.outputSupport.json
+        ? 'Registered source contract available for v1.0 JSON; v1.0 renderer compatibility is not implemented.'
+        : 'Add a reviewed source registration and v1.0 field mapping before catalog export.'];
+    }
+    discovery.summary.portable = 0;
+    discovery.summary.custom = 0;
+    discovery.summary.needsConfiguration = discovery.candidates.filter((candidate) => !candidate.outputSupport.json).length;
+    discovery.summary.sourceContracts = discovery.candidates.filter((candidate) => candidate.outputSupport.json).length;
+  }
   if (options.command === 'discover') {
     if (options.json) console.log(JSON.stringify(discovery, null, 2));
     else printDiscovery(discovery);
@@ -218,14 +240,14 @@ export async function run(argv = process.argv.slice(2)) {
   let outputs;
   if (options.components || options.allReady || options.outputs || options.command === 'export') {
     candidates = options.allReady
-      ? discovery.candidates.filter((candidate) => candidate.outputSupport.rendererZip)
+      ? discovery.candidates.filter((candidate) => options.protocol === '1.0' ? candidate.outputSupport.json : candidate.outputSupport.rendererZip)
       : selectCandidates(discovery, options.components ?? []);
     if (!candidates.length)
       throw new Error('Non-interactive export requires --components or --all-ready.');
-    outputs = options.outputs ?? ['json', 'zip'];
-  } else ({ candidates, outputs } = await interactive(discovery, output));
-  const result = exportSelection({ projectRoot, candidates, outputs, output });
-  console.log(`Exported ${result.components.join(', ')} to ${result.output}`);
+    outputs = options.outputs ?? (options.protocol === '1.0' ? ['json'] : ['json', 'zip']);
+  } else ({ candidates, outputs } = await interactive(discovery, output, options.protocol));
+  const result = exportSelection({ projectRoot, candidates, outputs, output, protocol: options.protocol, discovery });
+  console.log(`Exported${options.protocol === '1.0' ? ' validated A2UI v1.0 catalog for' : ''} ${result.components.join(', ')} to ${result.output}`);
   for (const file of result.files) console.log(`  ${file}`);
 }
 

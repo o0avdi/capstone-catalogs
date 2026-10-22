@@ -1,5 +1,27 @@
 # Angular Storybook export MVP
 
+### A2UI v1.0 CLI integration — October 21, 2026
+
+- [x] Establish combined baseline: `npm.cmd run test:a2ui` passed 33/33 before edits.
+- [x] Add explicit `--protocol 1.0` JSON path on `feat/storybook-a2ui-v1-integration`.
+  Preserve v0.9 as the compatibility default and its existing renderer/ZIP path.
+- [x] Reuse official index discovery, `metadata.mjs`, reviewed registrations,
+  `makeCatalogV1` and pinned official validators. Never use discovery example fields
+  as authoritative schemas. Preserve full selected index provenance and reviewed
+  content/event/callback mappings separately from the single catalog.
+- [x] Generate all three registered source contracts from a fresh official Angular
+  index; official meta-schema, structural checks and component-schema compilation pass.
+- [x] Add CLI integration coverage for subsets, source contracts, unsupported candidates,
+  validation failures, stale output refusal and rejection of untested v1.0 renderers.
+- Decision: keep the generator's stable catalogId for each selected output. Reject
+  nonempty destinations and all v1.0 ZIP requests. Emit no legacy example messages.
+- Decision: the integration rejects unsupported/lossy field shapes before the generator's
+  general DynamicValue fallback; do not modify the protected generator/validator/schema
+  files owned by the concurrent workstream. Override generator usage instructions so
+  the export does not advertise unexported Row/Column/Surface components or custom functions.
+- Focused integration suite passed 8/8; final combined suite passed 41/41. Exact reproduction
+  are recorded in `research-output/codex-storybook/V1_INTEGRATION_RESULT.md`.
+
 ### Official index discovery implementation — October 20, 2026
 
 - Universal discovery now accepts supplied official Storybook v5 index artifacts through
