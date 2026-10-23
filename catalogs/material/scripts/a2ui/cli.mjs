@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { discoverProject, resolveProjectRoot, selectCandidates } from './discovery.mjs';
 import { exportSelection } from './bundle.mjs';
 import { assessV1Readiness } from './integration-v1.mjs';
+import { resolveArtifacts } from './local-artifacts.mjs';
 
 const HELP = `Universal Storybook to A2UI exporter
 
@@ -23,6 +24,12 @@ Options:
   --components <names>  Comma-separated discovery ids or component names
   --protocol <version>  0.9 (compatibility default) or 1.0 (validated JSON only)
   --outputs <values>    json, zip, or json,zip
+  --catalog-only        Write only catalog.json (implies --protocol 1.0)
+  --diagnostics         Include diagnostic/provenance sidecars with catalog-only
+  --catalog-id <URI>     Set catalogId and $id through the v1.0 generator
+  --title <text>         Catalog title (v1.0)
+  --description <text>   Catalog description (v1.0)
+  --detect-artifacts     Opt in to local build index/manifest detection (v1.0)
   --out <path>          Output directory (default: ./a2ui-export)
   --all-ready           Select renderer-ready components (v1.0: validated catalog contracts)
   --json                Print discovery as JSON
@@ -31,7 +38,7 @@ Options:
 Examples:
   npm run a2ui -- discover
   npm run a2ui
-  npm run a2ui -- export --components ShadcnButton,MaterialButton --outputs json,zip
+  npm run a2ui -- export --catalog-only --angular-index storybook-static/index.json --components MaterialButton --out ./my-catalog
 `;
 
 export function parseArguments(argv) {
@@ -44,6 +51,15 @@ export function parseArguments(argv) {
     else if (value === '--json') options.json = true;
     else if (value === '--all-ready') options.allReady = true;
     else if (value === '--static-discovery') options.staticDiscovery = true;
+    else if (value === '--catalog-only') options.catalogOnly = true;
+    else if (value === '--diagnostics') options.diagnostics = true;
+    else if (value === '--detect-artifacts') options.detectArtifacts = true;
+    else if (['--catalog-id', '--title', '--description'].includes(value)) {
+      const key = { '--catalog-id': 'catalogId', '--title': 'title', '--description': 'description' }[value];
+      options.catalogOptions ??= {};
+      if (key in options.catalogOptions) throw new Error(`${value} may only be supplied once.`);
+      options.catalogOptions[key] = requiredValue(value, args.shift());
+    }
     else if (value === '--angular-index' || value === '--react-index') {
       options.indexes ??= [];
       options.indexes.push({ framework: value === '--angular-index' ? 'angular' : 'react', file: requiredValue(value, args.shift()) });
@@ -63,11 +79,21 @@ export function parseArguments(argv) {
     else if (!options.project) options.project = value;
     else throw new Error(`Unexpected argument ${value}.`);
   }
+  if (options.catalogOnly) {
+    if (options.protocol && options.protocol !== '1.0') throw new Error('--catalog-only requires protocol 1.0.');
+    if (options.outputs && (options.outputs.length !== 1 || options.outputs[0] !== 'json'))
+      throw new Error('--catalog-only supports --outputs json only.');
+    options.protocol = '1.0';
+  }
+  if ((options.catalogOptions || options.diagnostics || options.detectArtifacts) && options.protocol !== '1.0')
+    throw new Error('Catalog metadata, --diagnostics and --detect-artifacts require --catalog-only or --protocol 1.0.');
+  if (options.detectArtifacts && options.staticDiscovery)
+    throw new Error('--detect-artifacts cannot be combined with --static-discovery.');
   return options;
 }
 
 function requiredValue(flag, value) {
-  if (!value || value.startsWith('-')) throw new Error(`${flag} requires a value.`);
+  if (!value?.trim() || value.startsWith('-')) throw new Error(`${flag} requires a value.`);
   return value;
 }
 
@@ -93,6 +119,31 @@ function printDiscovery(discovery) {
       `Needs configuration: ${discovery.summary.needsConfiguration}` +
       (discovery.summary.sourceContracts === undefined ? '' : `  Source contracts: ${discovery.summary.sourceContracts}`),
   );
+}
+
+function printReadinessSummary(discovery, protocol) {
+  const supported = discovery.candidates.filter((candidate) => protocol === '1.0'
+    ? candidate.outputSupport.json : candidate.outputSupport.rendererZip);
+  const unsupported = discovery.candidates.filter((candidate) => !supported.includes(candidate));
+  console.log(`Supported: ${supported.length}/${discovery.candidates.length} (${supported.map((c) => c.componentName).join(', ') || 'none'}). Unsupported: ${unsupported.length}.`);
+  printDiagnosticSummary(discovery.diagnostics);
+  if (unsupported.length || discovery.diagnostics.length)
+    console.error('For full reasons and every candidate ID, use discover with the same input flags and --json; add --diagnostics to retain export details.');
+}
+
+function printDiagnosticSummary(diagnostics) {
+  const groups = new Map();
+  for (const diagnostic of diagnostics) {
+    const group = groups.get(diagnostic.code) ?? [];
+    group.push(diagnostic);
+    groups.set(diagnostic.code, group);
+  }
+  for (const [code, group] of groups) {
+    const ids = [...new Set(group.map((item) => item.id).filter(Boolean))];
+    console.error(`[${code}] ${group.length} occurrence(s): ${ids.length
+      ? ids.slice(0, 3).join(', ') + (ids.length > 3 ? ` (+${ids.length - 3} more)` : '')
+      : group[0].message}`);
+  }
 }
 
 function renderChecklist(title, items, selected, cursor, action, pageSize = 16) {
@@ -209,12 +260,13 @@ async function interactive(discovery, output, protocol) {
 }
 
 export async function run(argv = process.argv.slice(2)) {
-  const options = parseArguments(argv);
+  let options = parseArguments(argv);
   if (options.help) {
     console.log(HELP);
     return;
   }
   const projectRoot = resolveProjectRoot(options.project ?? process.cwd());
+  options = resolveArtifacts(projectRoot, options);
   if (options.reactManifest && options.protocol !== '1.0')
     throw new Error('--react-manifest requires --protocol 1.0 (catalog JSON only).');
   if (options.reactManifest && !options.indexes?.some((index) => index.framework === 'react'))
@@ -222,6 +274,7 @@ export async function run(argv = process.argv.slice(2)) {
   if (options.protocol === '1.0' && (!options.indexes?.length || options.staticDiscovery))
     throw new Error('Protocol 1.0 requires an official Storybook index. Supply --angular-index and/or --react-index.');
   const discovery = discoverProject(projectRoot, options);
+  discovery.diagnostics.unshift(...(options.artifactDiagnostics ?? []));
   if (options.protocol === '1.0') {
     const preflight = options.command === 'discover' || options.allReady || !options.command;
     const readiness = preflight ? assessV1Readiness(projectRoot, discovery.candidates, options) : [];
@@ -244,7 +297,11 @@ export async function run(argv = process.argv.slice(2)) {
     else printDiscovery(discovery);
     return;
   }
-  for (const diagnostic of discovery.diagnostics) console.error(`[${diagnostic.code}] ${diagnostic.message ?? diagnostic.id}`);
+  if (options.allReady) printReadinessSummary(discovery, options.protocol);
+  else {
+    printDiagnosticSummary(discovery.diagnostics);
+    if (discovery.diagnostics.length) console.error('Full discovery notes: use discover with the same input flags and --json. Add --diagnostics to retain export details.');
+  }
   const output = path.resolve(options.out ?? path.join(projectRoot, 'a2ui-export'));
   let candidates;
   let outputs;
@@ -253,10 +310,14 @@ export async function run(argv = process.argv.slice(2)) {
       ? discovery.candidates.filter((candidate) => options.protocol === '1.0' ? candidate.outputSupport.json : candidate.outputSupport.rendererZip)
       : selectCandidates(discovery, options.components ?? []);
     if (!candidates.length)
-      throw new Error('Non-interactive export requires --components or --all-ready.');
+      throw new Error(options.allReady ? 'No supported components passed readiness checks. Use discover with the same input flags and --json for rejection reasons.' : 'Non-interactive export requires --components or --all-ready.');
     outputs = options.outputs ?? (options.protocol === '1.0' ? ['json'] : ['json', 'zip']);
   } else ({ candidates, outputs } = await interactive(discovery, output, options.protocol));
-  const result = exportSelection({ projectRoot, candidates, outputs, output, protocol: options.protocol, discovery, reactManifest: options.reactManifest });
+  const result = exportSelection({ projectRoot, candidates, outputs, output, protocol: options.protocol, discovery,
+    reactManifest: options.reactManifest, catalogOptions: options.catalogOptions,
+    catalogOnly: options.catalogOnly, diagnostics: options.diagnostics });
+  for (const warning of new Set((result.warnings ?? []).map((item) => typeof item === 'string' ? item : `[${item.code}] ${item.message}`)))
+    console.error(warning);
   console.log(`Exported${options.protocol === '1.0' ? ' validated A2UI v1.0 catalog for' : ''} ${result.components.join(', ')} to ${result.output}`);
   for (const file of result.files) console.log(`  ${file}`);
 }

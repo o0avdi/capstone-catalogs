@@ -1,5 +1,42 @@
 # Angular Storybook export MVP
 
+### Developer CLI release for October 30 - October 23, 2026
+
+- Current deliverable is one validated A2UI v1.0 `catalog.json`; developers bring
+  their own agents and renderers. Historical renderer milestones below are preserved.
+- [x] Run the integrated baseline before implementation: 85/85 passed, zero skips
+  or failures (156.2 seconds), from `catalogs/material`. The repository root has no
+  package.json; the initial root-level invocation ran no tests. No integration repair
+  or validation relaxation was needed.
+- [x] Add `--catalog-id`, `--title`, `--description` through the existing generator
+  options. Preserve default metadata and require v1.0 for these options.
+- [x] Add `--catalog-only` (implies v1.0): successful output contains exactly one
+  catalog.json. `--diagnostics` optionally retains the existing four sidecars.
+  Failures never publish partial catalogs; nonempty destinations are refused.
+- [x] Group discovery/readiness diagnostics by code with counts and sample IDs;
+  `--all-ready` reports supported/unsupported totals. Full candidate reasons remain
+  in `discover --json` and optional export diagnostics.
+- [x] Add opt-in `--detect-artifacts` for conventional local build locations, with
+  explicit snapshot paths/freshness warning. Explicit index flags define all input
+  indexes; explicit manifest flags win. Ambiguities/missing artifacts fail clearly.
+  No configuration execution, new parser, timestamp ranking, or silent fallback.
+- [x] Add 13 CLI tests; focused run passed 13/13. Rewrite README with exact Angular,
+  JavaScript and mixed export commands plus setup, safety and troubleshooting.
+- [x] Generate a fresh official Angular index and real JSX Storybook build, then
+  export Angular-only, React-only and mixed catalogs with custom metadata.
+- [x] Final full regression: 98/98 passed, zero failures/skips (143.2 seconds).
+  Independent read-back validation passed for all three one-file exports; actual
+  unsupported mixed-validity selection produced only failure diagnostics.
+  `git diff --check` passed. React build needed approved subprocess execution after
+  sandbox esbuild `spawn EPERM`; the retry succeeded without changing dependencies.
+- Final validation and artifacts: `research-output/DEVELOPER_CLI_RELEASE_RESULT.md`.
+- Decisions: retain v0.9 as the existing default and v1.0 JSON sidecars by default;
+  the simple catalog-only flag opts into the new minimal output. Detection is opt-in
+  because paths and matching story IDs cannot prove metadata freshness. The historic
+  default catalog identity remains compatible; developers should supply their own.
+- No dependency/lockfile, Storybook framework/config, source contract, schema,
+  renderer, reference fixture or other-checkout changes. Work stays uncommitted.
+
 ### React CLI and JavaScript compatibility milestone - October 23, 2026
 
 - Current product scope is one validated A2UI v1.0 `catalog.json`. The developer

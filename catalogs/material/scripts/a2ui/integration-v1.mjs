@@ -89,7 +89,8 @@ export function assessV1Readiness(root, candidates, { reactManifest } = {}) {
   return results;
 }
 
-export function exportV1Selection({ projectRoot, candidates, outputs, output, discovery, reactManifest }) {
+export function exportV1Selection({ projectRoot, candidates, outputs, output, discovery, reactManifest, catalogOptions = {}, catalogOnly = false, diagnostics: includeDiagnostics = false }) {
+  const sidecars = !catalogOnly || includeDiagnostics;
   if (!candidates?.length) throw new Error('Select at least one component.');
   if (!outputs?.length || outputs.some((value) => value !== 'json'))
     throw new Error('Protocol 1.0 supports --outputs json only. ZIP/renderer export requires an implemented and tested v1.0 runtime; existing renderers use v0.9.');
@@ -160,6 +161,7 @@ export function exportV1Selection({ projectRoot, candidates, outputs, output, di
     const catalog = makeCatalogV1(metadata, { instructions,
       ...(reactCandidates.length ? { title: 'Storybook A2UI Catalog',
         description: 'Source contracts exported from official Storybook indexes and component metadata.' } : {}),
+      ...catalogOptions,
     });
     const validation = validateV1Export(catalog);
     const names = metadata.map((component) => component.name).sort();
@@ -182,22 +184,25 @@ export function exportV1Selection({ projectRoot, candidates, outputs, output, di
     });
     diagnostics.status = 'success';
     fs.mkdirSync(destination, { recursive: true });
-    fs.writeFileSync(path.join(destination, 'components.json'), json(components));
-    fs.writeFileSync(path.join(destination, 'provenance.json'), json({
-      generatedFrom: 'official Storybook v5 index + source contracts (Angular compiler / React Components Manifest)',
-      indexSources: discovery?.indexSources ?? [],
-      reactManifests: [...new Map(metadata.filter((component) => component.manifestProvenance)
-        .map((component) => [component.manifestProvenance.sha256, component.manifestProvenance])).values()],
-    }));
-    fs.writeFileSync(path.join(destination, 'validation.json'), json(validation));
-    fs.writeFileSync(path.join(destination, 'diagnostics.json'), json(diagnostics));
+    if (sidecars) {
+      fs.writeFileSync(path.join(destination, 'components.json'), json(components));
+      fs.writeFileSync(path.join(destination, 'provenance.json'), json({
+        generatedFrom: 'official Storybook v5 index + source contracts (Angular compiler / React Components Manifest)',
+        indexSources: discovery?.indexSources ?? [],
+        reactManifests: [...new Map(metadata.filter((component) => component.manifestProvenance)
+          .map((component) => [component.manifestProvenance.sha256, component.manifestProvenance])).values()],
+      }));
+      fs.writeFileSync(path.join(destination, 'validation.json'), json(validation));
+      fs.writeFileSync(path.join(destination, 'diagnostics.json'), json(diagnostics));
+    }
     // Publish the single authoritative catalog only after all checks pass.
     fs.writeFileSync(path.join(destination, 'catalog.json.tmp'), json(catalog));
     fs.renameSync(path.join(destination, 'catalog.json.tmp'), path.join(destination, 'catalog.json'));
-    return { output: destination, files: fs.readdirSync(destination).sort(), components: names };
+    return { output: destination, files: fs.readdirSync(destination).sort(), components: names, warnings: diagnostics.warnings };
   } catch (error) {
     diagnostics.status = 'failed';
     diagnostics.issues.push({ code: 'V1_EXPORT_FAILED', message: error.message });
+    if (!sidecars) throw new Error(`${error.message}\nNo catalog published. Add --diagnostics to retain failure details.`, { cause: error });
     fs.mkdirSync(destination, { recursive: true });
     fs.writeFileSync(path.join(destination, 'diagnostics.json'), json(diagnostics));
     throw new Error(`${error.message}\nFailure diagnostics: ${path.join(destination, 'diagnostics.json')}`, { cause: error });
