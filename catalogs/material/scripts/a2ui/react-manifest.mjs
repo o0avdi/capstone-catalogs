@@ -31,6 +31,7 @@ function normalizePath(value) {
  * - RD:  { value: "false", computed: false } or { value: "\"medium\"", computed: false }
  */
 export function parseDocgenDefault(defaultValue) {
+  if (defaultValue?.computed === true) return undefined;
   if (!defaultValue || defaultValue.value === undefined || defaultValue.value === null) {
     return undefined;
   }
@@ -41,13 +42,17 @@ export function parseDocgenDefault(defaultValue) {
   if (raw === 'false') return false;
 
   // Quoted string literal e.g. "\"medium\"" or "'medium'"
-  if ((raw.startsWith('"') && raw.endsWith('"')) || (raw.startsWith("'") && raw.endsWith("'"))) {
+  if (raw.startsWith('"') && raw.endsWith('"')) {
+    try { return JSON.parse(raw); } catch { return undefined; }
+  }
+  if (/^'[^'\\\r\n]*'$/.test(raw)) {
     return raw.slice(1, -1);
   }
 
   // Integer or float literal e.g. "123", "-4.5"
   if (/^-?\d+(?:\.\d+)?$/.test(raw)) {
-    return Number(raw);
+    const number = Number(raw);
+    return Number.isFinite(number) ? number : undefined;
   }
 
   // Unquoted enum or identifier literal (common in RDT output e.g. value: "medium")
@@ -73,6 +78,7 @@ export function classifyProperty(name, propDef, options = {}) {
   // to avoid false positives on types like ChildrenOrFunction<T>)
   const isContentName = ['children', 'render', 'slot'].includes(name);
   const isReactNodeType =
+    ['node', 'element'].includes(rawType) ||
     rawType === 'ReactNode' ||
     rawType === 'ReactElement' ||
     rawType === 'JSX.Element' ||
@@ -107,6 +113,7 @@ export function classifyProperty(name, propDef, options = {}) {
   // Matches React event convention (onClick, onPress, onFocus) or function/signature type text
   const isCallbackName = /^on[A-Z]/.test(name);
   const isCallbackSignature =
+    ['func', 'function'].includes(rawTypeLower) ||
     rawType.startsWith('((') ||
     rawType.includes('=>') ||
     /\bFunction\b/.test(rawType) ||
@@ -162,9 +169,12 @@ export function classifyProperty(name, propDef, options = {}) {
   // 7. String Enum (RDT and RD)
   // RDT enum with explicit values array
   if (isRDT && propDef.type?.name === 'enum' && Array.isArray(propDef.type.value)) {
-    const rawValues = propDef.type.value.map((v) =>
-      typeof v.value === 'string' ? v.value.replace(/^['"]|['"]$/g, '') : v.value,
-    );
+    // Both docgen engines use type.value for PropTypes/TS enums. Numeric enum
+    // expressions are strings too; never silently turn them into string enums.
+    const rawValues = propDef.type.value.map((v) => {
+      if (v.computed || typeof v.value !== 'string' || !/^["']/.test(v.value)) return undefined;
+      return parseDocgenDefault({ value: v.value });
+    });
     // If all values are non-empty strings
     if (rawValues.length > 0 && rawValues.every((v) => typeof v === 'string' && v.length > 0)) {
       return {
@@ -178,10 +188,11 @@ export function classifyProperty(name, propDef, options = {}) {
   // RD union with literal elements
   if (isRD && propDef.tsType?.name === 'union' && Array.isArray(propDef.tsType.elements)) {
     const isAllStringLiterals = propDef.tsType.elements.every(
-      (el) => el.name === 'literal' && typeof el.value === 'string',
+      (el) => el.name === 'literal' && typeof el.value === 'string' && /^["']/.test(el.value) &&
+        typeof parseDocgenDefault({ value: el.value }) === 'string',
     );
     if (isAllStringLiterals && propDef.tsType.elements.length > 0) {
-      const values = propDef.tsType.elements.map((el) => el.value.replace(/^['"]|['"]$/g, ''));
+      const values = propDef.tsType.elements.map((el) => parseDocgenDefault({ value: el.value }));
       return {
         category: 'enum',
         rawType,
@@ -193,11 +204,9 @@ export function classifyProperty(name, propDef, options = {}) {
   // Union literal string parsing (e.g. "\"small\" | \"medium\" | \"large\"" in RDT)
   if (rawType.includes('|') && !rawType.includes('null') && !rawType.includes('undefined')) {
     const parts = rawType.split('|').map((p) => p.trim());
-    const isQuotedUnion = parts.every(
-      (p) => (p.startsWith('"') && p.endsWith('"')) || (p.startsWith("'") && p.endsWith("'")),
-    );
+    const isQuotedUnion = parts.every((p) => /^["']/.test(p) && typeof parseDocgenDefault({ value: p }) === 'string');
     if (isQuotedUnion && parts.length > 0) {
-      const values = parts.map((p) => p.slice(1, -1));
+      const values = parts.map((p) => parseDocgenDefault({ value: p }));
       return {
         category: 'enum',
         rawType,
@@ -272,7 +281,7 @@ export function readReactComponentsManifest(manifestOrPath, options = {}) {
     );
   }
 
-  if (!manifest.components || typeof manifest.components !== 'object') {
+  if (!manifest.components || typeof manifest.components !== 'object' || Array.isArray(manifest.components)) {
     throw new Error(
       `Invalid Storybook Components Manifest: missing or malformed 'components' dictionary.`,
     );
@@ -423,10 +432,25 @@ export function normalizeReactComponentManifest(entry, options = {}) {
     const rawType = propDef.type?.name ?? propDef.tsType?.raw ?? propDef.tsType?.name ?? 'unknown';
     const parsedDefault = parseDocgenDefault(propDef.defaultValue);
     const hasSourceDefault = parsedDefault !== undefined;
-    const required = propDef.required === true;
+    const required = typeof propDef.required === 'boolean' ? propDef.required : null;
     const propDescription = propDef.description ? propDef.description.trim() : undefined;
 
     const classification = classifyProperty(propName, propDef, options);
+    if (['scalar', 'enum', 'union'].includes(classification.category) && propDef.defaultValue != null) {
+      const rawDefault = String(propDef.defaultValue.value).trim();
+      const identifierFromReactDocgen = Boolean(entry.reactDocgen) && /^[a-zA-Z_][a-zA-Z0-9_-]*$/.test(rawDefault) &&
+        !['true', 'false', 'null', 'undefined'].includes(rawDefault);
+      if ((parsedDefault === undefined && rawDefault !== 'undefined') || identifierFromReactDocgen) diagnostics.push({
+        code: 'UNVERIFIED_SOURCE_DEFAULT', severity: 'error', property: propName,
+        message: `${propName}: docgen source default '${rawDefault}' is not a verified scalar literal. Add a reviewed lossless default conversion before export.`,
+      });
+      if (hasSourceDefault && !identifierFromReactDocgen) {
+        const types = Array.isArray(classification.schema.type) ? classification.schema.type : [classification.schema.type];
+        if (!types.includes(typeof parsedDefault) || (classification.schema.enum && !classification.schema.enum.includes(parsedDefault)))
+          diagnostics.push({ code: 'SOURCE_DEFAULT_TYPE_MISMATCH', severity: 'error', property: propName,
+            message: `${propName}: source default does not match the declared docgen type/enum.` });
+      }
+    }
 
     rawProperties[propName] = {
       name: propName,

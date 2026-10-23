@@ -18,6 +18,7 @@ Options:
   --project <path>       Project directory (defaults to the current directory)
   --angular-index <file> Official local Angular v5 index (relative to project)
   --react-index <file>   Separate local React v5 index (relative to project)
+  --react-manifest <file> React Components Manifest v0 from the same build (v1.0)
   --static-discovery    Explicit reduced-confidence static fallback (no indexes)
   --components <names>  Comma-separated discovery ids or component names
   --protocol <version>  0.9 (compatibility default) or 1.0 (validated JSON only)
@@ -48,6 +49,7 @@ export function parseArguments(argv) {
       options.indexes.push({ framework: value === '--angular-index' ? 'angular' : 'react', file: requiredValue(value, args.shift()) });
     }
     else if (value === '--project') options.project = requiredValue(value, args.shift());
+    else if (value === '--react-manifest') options.reactManifest = requiredValue(value, args.shift());
     else if (value === '--protocol') {
       options.protocol = requiredValue(value, args.shift());
       if (!['0.9', '1.0'].includes(options.protocol)) throw new Error('Protocol must be 0.9 or 1.0.');
@@ -213,12 +215,16 @@ export async function run(argv = process.argv.slice(2)) {
     return;
   }
   const projectRoot = resolveProjectRoot(options.project ?? process.cwd());
+  if (options.reactManifest && options.protocol !== '1.0')
+    throw new Error('--react-manifest requires --protocol 1.0 (catalog JSON only).');
+  if (options.reactManifest && !options.indexes?.some((index) => index.framework === 'react'))
+    throw new Error('--react-manifest requires --react-index from the same Storybook build.');
   if (options.protocol === '1.0' && (!options.indexes?.length || options.staticDiscovery))
     throw new Error('Protocol 1.0 requires an official Storybook index. Supply --angular-index and/or --react-index.');
   const discovery = discoverProject(projectRoot, options);
   if (options.protocol === '1.0') {
     const preflight = options.command === 'discover' || options.allReady || !options.command;
-    const readiness = preflight ? assessV1Readiness(projectRoot, discovery.candidates) : [];
+    const readiness = preflight ? assessV1Readiness(projectRoot, discovery.candidates, options) : [];
     // Legacy renderer readiness does not imply v1.0 runtime compatibility.
     for (const candidate of discovery.candidates) {
       const result = readiness.find((item) => item.id === candidate.id);
@@ -250,7 +256,7 @@ export async function run(argv = process.argv.slice(2)) {
       throw new Error('Non-interactive export requires --components or --all-ready.');
     outputs = options.outputs ?? (options.protocol === '1.0' ? ['json'] : ['json', 'zip']);
   } else ({ candidates, outputs } = await interactive(discovery, output, options.protocol));
-  const result = exportSelection({ projectRoot, candidates, outputs, output, protocol: options.protocol, discovery });
+  const result = exportSelection({ projectRoot, candidates, outputs, output, protocol: options.protocol, discovery, reactManifest: options.reactManifest });
   console.log(`Exported${options.protocol === '1.0' ? ' validated A2UI v1.0 catalog for' : ''} ${result.components.join(', ')} to ${result.output}`);
   for (const file of result.files) console.log(`  ${file}`);
 }

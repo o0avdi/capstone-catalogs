@@ -1,0 +1,8 @@
+{
+  "source": "Real Storybook build of ../*.stories.jsx with ../.storybook/main.js",
+  "transformations": [
+    "Docgen absolute source paths made relative to catalogs/material; all prop metadata unchanged."
+  ],
+  "originalManifestSha256": "dba1bb3bf8ed6ad35687d2c3cd2b3cfc4dc090d7aee61a0790e98280b8f047f1",
+  "originalIndexSha256": "5d5ff4e5ad2bced7e3f7677373cd61dfa754347183a23470f8ef8d42c2ec1719"
+}

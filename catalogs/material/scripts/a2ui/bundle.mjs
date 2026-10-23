@@ -164,8 +164,8 @@ function writeRootFiles(stage, candidates, catalog, messages, diagnostics) {
   );
 }
 
-export function exportSelection({ projectRoot, candidates, outputs, output, protocol = '0.9', discovery }) {
-  if (protocol === '1.0') return exportV1Selection({ projectRoot, candidates, outputs, output, discovery });
+export function exportSelection({ projectRoot, candidates, outputs, output, protocol = '0.9', discovery, reactManifest }) {
+  if (protocol === '1.0') return exportV1Selection({ projectRoot, candidates, outputs, output, discovery, reactManifest });
   if (protocol !== '0.9') throw new Error('Protocol must be 0.9 or 1.0.');
   if (!candidates.length) throw new Error('Select at least one component.');
   const requested = new Set(outputs);

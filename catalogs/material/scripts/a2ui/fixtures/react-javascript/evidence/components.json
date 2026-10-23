@@ -1,0 +1,184 @@
+{
+  "v": 0,
+  "components": {
+    "javascript-interactivenotice": {
+      "id": "javascript-interactivenotice",
+      "name": "InteractiveNotice",
+      "path": "./scripts/a2ui/fixtures/react-javascript/InteractiveNotice.stories.jsx",
+      "jsDocTags": {},
+      "description": "Source behavior that needs explicit reviewed A2UI mappings.",
+      "reactDocgen": {
+        "description": "Source behavior that needs explicit reviewed A2UI mappings.",
+        "methods": [],
+        "displayName": "InteractiveNotice",
+        "definedInFile": "./scripts/a2ui/fixtures/react-javascript/InteractiveNotice.jsx",
+        "actualName": "InteractiveNotice",
+        "exportName": "InteractiveNotice",
+        "props": {
+          "label": {
+            "description": "",
+            "type": {
+              "name": "string"
+            },
+            "required": true
+          },
+          "onDismiss": {
+            "description": "Called when the dismissal button is clicked.",
+            "type": {
+              "name": "func"
+            },
+            "required": false
+          },
+          "children": {
+            "description": "Projected detail content.",
+            "type": {
+              "name": "node"
+            },
+            "required": false
+          },
+          "options": {
+            "description": "Behavior configuration.",
+            "type": {
+              "name": "shape",
+              "value": {
+                "mode": {
+                  "name": "string",
+                  "required": false
+                }
+              }
+            },
+            "required": false
+          }
+        }
+      },
+      "stories": [
+        {
+          "id": "javascript-interactivenotice--example",
+          "name": "Example",
+          "snippet": "const Example = () => <InteractiveNotice label=\"Dismiss\" options={{ mode: 'quiet' }} />;"
+        }
+      ],
+      "import": "import { InteractiveNotice } from 'a2ui-react-javascript-evidence';"
+    },
+    "javascript-statusnotice": {
+      "id": "javascript-statusnotice",
+      "name": "StatusNotice",
+      "path": "./scripts/a2ui/fixtures/react-javascript/StatusNotice.stories.jsx",
+      "jsDocTags": {},
+      "description": "A JavaScript-only status summary with a documented source contract.",
+      "reactDocgen": {
+        "description": "A JavaScript-only status summary with a documented source contract.",
+        "methods": [],
+        "displayName": "StatusNotice",
+        "definedInFile": "./scripts/a2ui/fixtures/react-javascript/StatusNotice.jsx",
+        "actualName": "StatusNotice",
+        "exportName": "StatusNotice",
+        "props": {
+          "tone": {
+            "defaultValue": {
+              "value": "'info'",
+              "computed": false
+            },
+            "description": "Visual emphasis of the status.",
+            "type": {
+              "name": "enum",
+              "value": [
+                {
+                  "value": "'info'",
+                  "computed": false
+                },
+                {
+                  "value": "'success'",
+                  "computed": false
+                },
+                {
+                  "value": "'warning'",
+                  "computed": false
+                }
+              ]
+            },
+            "required": false
+          },
+          "count": {
+            "defaultValue": {
+              "value": "0",
+              "computed": false
+            },
+            "description": "Number of items represented by the summary.",
+            "type": {
+              "name": "number"
+            },
+            "required": false
+          },
+          "compact": {
+            "defaultValue": {
+              "value": "false",
+              "computed": false
+            },
+            "description": "Whether to use compact spacing.",
+            "type": {
+              "name": "bool"
+            },
+            "required": false
+          },
+          "label": {
+            "description": "Accessible summary label supplied by the caller.",
+            "type": {
+              "name": "string"
+            },
+            "required": true
+          }
+        }
+      },
+      "stories": [
+        {
+          "id": "javascript-statusnotice--warning",
+          "name": "Warning",
+          "snippet": "const Warning = () => <StatusNotice label=\"Pending\" tone=\"warning\" count={7} compact />;"
+        },
+        {
+          "id": "javascript-statusnotice--success",
+          "name": "Success",
+          "snippet": "const Success = () => <StatusNotice label=\"Complete\" tone=\"success\" count={12} />;"
+        }
+      ],
+      "import": "import { StatusNotice } from 'a2ui-react-javascript-evidence';"
+    },
+    "javascript-undocumentednotice": {
+      "id": "javascript-undocumentednotice",
+      "name": "UndocumentedNotice",
+      "path": "./scripts/a2ui/fixtures/react-javascript/UndocumentedNotice.stories.jsx",
+      "jsDocTags": {},
+      "description": "JavaScript without PropTypes: defaults alone do not establish a full contract.",
+      "reactDocgen": {
+        "description": "JavaScript without PropTypes: defaults alone do not establish a full contract.",
+        "methods": [],
+        "displayName": "UndocumentedNotice",
+        "definedInFile": "./scripts/a2ui/fixtures/react-javascript/UndocumentedNotice.jsx",
+        "actualName": "UndocumentedNotice",
+        "exportName": "UndocumentedNotice",
+        "props": {
+          "count": {
+            "defaultValue": {
+              "value": "0",
+              "computed": false
+            },
+            "required": false
+          }
+        }
+      },
+      "stories": [
+        {
+          "id": "javascript-undocumentednotice--example",
+          "name": "Example",
+          "snippet": "const Example = () => <UndocumentedNotice label=\"Example only\" count={99} />;"
+        }
+      ],
+      "import": "import { UndocumentedNotice } from 'a2ui-react-javascript-evidence';"
+    }
+  },
+  "meta": {
+    "docgen": "react-docgen",
+    "durationMs": 2725
+  }
+}

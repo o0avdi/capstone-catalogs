@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { extract } from './metadata.mjs';
 import { createAngularCatalogExtractor } from './angular-catalog.mjs';
+import { createReactCatalogExtractor } from './react-integration.mjs';
 import { makeCatalogV1 } from './catalog-v1.mjs';
 import {
   createCatalogValidator,
@@ -53,17 +54,18 @@ const instructions = 'Use only the components and properties declared in this ca
 
 // Used only for readiness discovery/bulk selection. Export re-reads source, so a
 // preflight result can never authorize stale contracts or bypass validation.
-export function assessV1Readiness(root, candidates) {
+export function assessV1Readiness(root, candidates, { reactManifest } = {}) {
   const registrationsFile = path.join(root, 'a2ui/registrations.json');
   const registrations = fs.existsSync(registrationsFile) ? JSON.parse(fs.readFileSync(registrationsFile, 'utf8')) : [];
   const unregistered = candidates.filter((c) => c.framework === 'angular' && !c.registrationName);
   const extractAngular = unregistered.length ? createAngularCatalogExtractor(root, unregistered) : undefined;
+  const extractReact = candidates.some((c) => c.framework === 'react') ? createReactCatalogExtractor(root, reactManifest) : undefined;
   const results = candidates.map((candidate) => {
     try {
       const matches = registrations.filter((r) => normalize(r.story) === candidate.storyPath);
       let component;
-      if (candidate.framework !== 'angular') throw new Error('React catalog extraction is outside this Angular capability.');
-      if (!matches.length) component = extractAngular(candidate);
+      if (candidate.framework === 'react') component = extractReact(candidate);
+      else if (!matches.length) component = extractAngular(candidate);
       else {
         if (matches.length !== 1 || matches[0].name !== candidate.registrationName)
           throw new Error('No unique reviewed Angular source registration.');
@@ -87,7 +89,7 @@ export function assessV1Readiness(root, candidates) {
   return results;
 }
 
-export function exportV1Selection({ projectRoot, candidates, outputs, output, discovery }) {
+export function exportV1Selection({ projectRoot, candidates, outputs, output, discovery, reactManifest }) {
   if (!candidates?.length) throw new Error('Select at least one component.');
   if (!outputs?.length || outputs.some((value) => value !== 'json'))
     throw new Error('Protocol 1.0 supports --outputs json only. ZIP/renderer export requires an implemented and tested v1.0 runtime; existing renderers use v0.9.');
@@ -110,9 +112,12 @@ export function exportV1Selection({ projectRoot, candidates, outputs, output, di
     const registrations = fs.existsSync(registrationsFile) ? JSON.parse(fs.readFileSync(registrationsFile, 'utf8')) : [];
     const selectedRegistrations = [];
     const unregistered = [];
+    const reactCandidates = [];
     for (const candidate of candidates) {
       const matches = registrations.filter((registration) => normalize(registration.story) === candidate.storyPath);
-      if (candidate.framework === 'angular' && !matches.length) {
+      if (candidate.framework === 'react') {
+        reactCandidates.push(candidate);
+      } else if (candidate.framework === 'angular' && !matches.length) {
         unregistered.push(candidate);
       } else if (candidate.framework !== 'angular' || matches.length !== 1 || matches[0].name !== candidate.registrationName) {
         diagnostics.issues.push({ code: 'UNSUPPORTED_V1_COMPONENT', id: candidate.id, storyPath: candidate.storyPath,
@@ -124,6 +129,16 @@ export function exportV1Selection({ projectRoot, candidates, outputs, output, di
     const entries = Object.fromEntries(candidates.flatMap((candidate) => candidate.discovery.stories).map((entry) => [entry.id, entry]));
     const metadata = selectedRegistrations.length
       ? extract(root, selectedRegistrations, { v: 5, entries }, { catalogOnly: true }) : [];
+    if (reactCandidates.length) {
+      const extractReact = createReactCatalogExtractor(root, reactManifest);
+      for (const candidate of reactCandidates) {
+        try { metadata.push(extractReact(candidate)); }
+        catch (error) {
+          diagnostics.issues.push({ code: error.code ?? 'UNSUPPORTED_V1_COMPONENT',
+            id: candidate.id, storyPath: candidate.storyPath, message: error.message, details: error.details ?? [] });
+        }
+      }
+    }
     if (unregistered.length) {
       const extractAngular = createAngularCatalogExtractor(root, unregistered);
       for (const candidate of unregistered) {
@@ -142,30 +157,37 @@ export function exportV1Selection({ projectRoot, candidates, outputs, output, di
       throw new Error('Component identity collision: selected source classes/registrations share a catalog name. Select one CSF identity or add a reviewed unique mapping.');
     assertV1Convertible(metadata);
     diagnostics.warnings = metadata.flatMap((component) => component.warnings ?? []);
-    const catalog = makeCatalogV1(metadata, { instructions });
+    const catalog = makeCatalogV1(metadata, { instructions,
+      ...(reactCandidates.length ? { title: 'Storybook A2UI Catalog',
+        description: 'Source contracts exported from official Storybook indexes and component metadata.' } : {}),
+    });
     const validation = validateV1Export(catalog);
     const names = metadata.map((component) => component.name).sort();
     if (JSON.stringify(Object.keys(catalog.components).sort()) !== JSON.stringify(names))
       throw new Error('Generated catalog components do not match the selected source contracts.');
 
     const components = metadata.map((component) => {
-      const candidate = candidates.find((item) => item.storyPath === component.story);
+      const candidate = candidates.find((item) => component.candidateId ? item.id === component.candidateId : item.storyPath === component.story);
       return {
         name: component.name, id: candidate.id, title: candidate.title, framework: candidate.framework,
         storyPath: candidate.storyPath, source: component.source, typeName: component.typeName,
         className: component.className, sourceIdentity: component.identity,
         storyIds: component.storyIds, discovery: candidate.discovery,
-        contractSource: component.candidateId ? 'Angular compiler source inputs (catalog only); no registration or adapter' :
+        contractSource: component.framework === 'react' ? 'Official Storybook Components Manifest + react-manifest.mjs; story args are examples only' :
+          component.candidateId ? 'Angular compiler source inputs (catalog only); no registration or adapter' :
           'metadata.mjs source extractor and reviewed registration; story args are examples only',
         content: component.content ?? {}, events: component.events ?? {}, callbacks: component.callbacks,
+        ...(component.framework === 'react' ? { manifest: component.manifestProvenance, rawProperties: component.rawProperties } : {}),
       };
     });
     diagnostics.status = 'success';
     fs.mkdirSync(destination, { recursive: true });
     fs.writeFileSync(path.join(destination, 'components.json'), json(components));
     fs.writeFileSync(path.join(destination, 'provenance.json'), json({
-      generatedFrom: 'official Storybook v5 index + Angular source contracts',
+      generatedFrom: 'official Storybook v5 index + source contracts (Angular compiler / React Components Manifest)',
       indexSources: discovery?.indexSources ?? [],
+      reactManifests: [...new Map(metadata.filter((component) => component.manifestProvenance)
+        .map((component) => [component.manifestProvenance.sha256, component.manifestProvenance])).values()],
     }));
     fs.writeFileSync(path.join(destination, 'validation.json'), json(validation));
     fs.writeFileSync(path.join(destination, 'diagnostics.json'), json(diagnostics));

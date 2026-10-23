@@ -1,0 +1,7 @@
+{
+  "name": "a2ui-react-javascript-evidence",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": { "prop-types": "15.8.1" }
+}

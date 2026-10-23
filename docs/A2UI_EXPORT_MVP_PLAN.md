@@ -1,5 +1,36 @@
 # Angular Storybook export MVP
 
+### React CLI and JavaScript compatibility milestone - October 23, 2026
+
+- Current product scope is one validated A2UI v1.0 `catalog.json`. The developer
+  owns the renderer and agent. Historical renderer/ZIP/Composer milestones below
+  are preserved history, not requirements for this work.
+- [x] Reproduce the cross-framework baseline: 65/65 tests passed, zero skips.
+- [x] Wire `--react-manifest` into production CLI selection, discovery readiness,
+  `--all-ready` and JSON export using the existing manifest adapter, `makeCatalogV1`
+  and pinned official validation. Generator, validator and quality tests unchanged.
+- [x] Match exact normalized CSF paths and story ID sets, cross-check observed
+  component paths, reject ambiguous identities and preserve artifact hashes.
+- [x] Build an isolated real JavaScript/JSX Storybook with installed Storybook 10.6.0,
+  react-docgen 8.0.4 and documented PropTypes. No TypeScript conversion or new parser.
+- [x] Export and validate `StatusNotice` from its actual official manifest; export
+  `StatusNotice` plus registered Angular `MaterialCheckbox` into one catalog.
+- [x] Demonstrate missing metadata experimentally: untyped JSX exposes `count`'s
+  default but no type and omits `label`; CLI refuses that contract. Unmapped callback,
+  child slot and object props also fail with named diagnostics, never partial output.
+- [x] Add 11 focused integration tests; initial focused run passed 11/11.
+- [x] Final combined regression: 76/76 passed, zero failures/skips (246.3 seconds).
+  Protected files/configurations are unchanged and `git diff --check` passed.
+- Decisions: scalar React contracts only in this milestone; behavior mappings must
+  be implemented and tested explicitly, with no blanket exclusion/ignore mechanism.
+  Docgen omissions cannot be recovered from story args. Successful exports state this
+  metadata coverage limit. Source defaults must be verified literals matching their
+  types; numeric enums cannot be silently converted into string enums.
+- Existing application dependencies, lockfile and both Storybook configurations
+  remain unchanged. Only the isolated fixture adds pinned `prop-types@15.8.1` and
+  its own lockfile. No renderer work, other checkout changes, commit, push or merge.
+- Evidence and reproduction: `research-output/REACT_AND_JAVASCRIPT_CLI_RESULT.md`.
+
 ### Unregistered Angular catalog-only milestone — October 22, 2026
 
 - Current milestone delivers only the A2UI v1.0 `catalog.json`; the developer owns
