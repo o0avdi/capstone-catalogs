@@ -13,6 +13,7 @@ import {
   getRequiredProperties,
   makeCatalogV1,
   sortDeterministic,
+  isValidCatalogId,
 } from './catalog-v1.mjs';
 import {
   createCatalogValidator,
@@ -22,7 +23,9 @@ import {
   validateCatalogStructuralRules,
   validateRuntimeMappings,
   runValidationSuite,
+  categorizeValidationIssues,
 } from './validate-catalog-v1.mjs';
+import { normalizeReactManifest, toA2UIComponentMetadata } from './react-manifest.mjs';
 
 const root = path.resolve(fileURLToPath(import.meta.url), '../../..');
 const registrations = JSON.parse(fs.readFileSync(path.join(root, 'a2ui/registrations.json'), 'utf8'));
@@ -591,4 +594,526 @@ test('full validation suite execution passes cleanly', () => {
   assert.equal(suite.instancesPassed, suite.instancesTotal);
   assert.equal(suite.runtimeResults.valid, true);
   assert.equal(suite.allPassed, true);
+});
+
+
+// ============================================================================
+// BACS 496 Quality Gate Hardening Tests (Tasks 1 - 10)
+// ============================================================================
+
+test('detect duplicate component names and invalid catalog identities (Task 5)', () => {
+  // 1. Duplicate component names in candidates array are rejected
+  assert.throws(
+    () =>
+      makeCatalogV1([
+        { name: 'DuplicateButton', fields: [] },
+        { name: 'DuplicateButton', fields: [] },
+      ]),
+    (err) => {
+      assert.match(err.message, /Duplicate component name 'DuplicateButton'/);
+      return true;
+    },
+  );
+
+  // 2. isValidCatalogId validation
+  assert.equal(isValidCatalogId(catalogV1Id), true);
+  assert.equal(isValidCatalogId('https://example.com/catalogs/v1'), true);
+  assert.equal(isValidCatalogId('http://localhost:3000/catalog.json'), true);
+  assert.equal(isValidCatalogId('urn:uuid:6e8bc430-9c3a-11d9-9669-0800200c9a66'), true);
+  assert.equal(isValidCatalogId('urn:catalog:material-widgets:1.0.0'), true);
+
+  // Negative catalog IDs
+  assert.equal(isValidCatalogId(''), false);
+  assert.equal(isValidCatalogId('   '), false);
+  assert.equal(isValidCatalogId('https://example.com/bad path with spaces'), false);
+  assert.equal(isValidCatalogId('https://example.com/catalog#with-fragment'), false);
+  assert.equal(isValidCatalogId('not-a-uri'), false);
+  assert.equal(isValidCatalogId(12345), false);
+  assert.equal(isValidCatalogId(null), false);
+  assert.equal(isValidCatalogId(undefined), false);
+
+  // 3. makeCatalogV1 rejects invalid catalogId options
+  assert.throws(
+    () => makeCatalogV1(metadata, { catalogId: 'bad id with spaces' }),
+    /Invalid catalogId/,
+  );
+  assert.throws(
+    () => makeCatalogV1(metadata, { catalogId: 'https://example.com/cat#fragment' }),
+    /Invalid catalogId/,
+  );
+  assert.throws(
+    () => makeCatalogV1(metadata, { catalogId: '' }),
+    /Invalid catalogId/,
+  );
+
+  // 4. Structural validator rejects duplicate references in $defs.anyComponent.oneOf
+  const dupRefCatalog = JSON.parse(JSON.stringify(catalog));
+  dupRefCatalog.$defs.anyComponent.oneOf.push({ $ref: '#/components/FinanceMetricCard' });
+  const dupRefResult = validateCatalogStructuralRules(dupRefCatalog);
+  assert.equal(dupRefResult.valid, false);
+  assert.ok(dupRefResult.errors.some((e) => e.includes('duplicate component reference')));
+
+  // 5. Reference validator also catches duplicate references in anyComponent.oneOf
+  const { commonTypes } = loadOfficialSchemas();
+  const refDupResult = validateCatalogReferences(dupRefCatalog, commonTypes);
+  assert.equal(refDupResult.valid, false);
+  assert.ok(refDupResult.errors.some((e) => e.includes('Duplicate component reference')));
+
+  // 6. Structural validator rejects missing or invalid catalogId
+  const invalidIdCatalog = { ...catalog, catalogId: 'invalid uri' };
+  const badIdResult = validateCatalogStructuralRules(invalidIdCatalog);
+  assert.equal(badIdResult.valid, false);
+  assert.ok(badIdResult.errors.some((e) => e.includes("Invalid 'catalogId'")));
+});
+
+test('contract hardening: required properties must actually exist in generated properties (Task 3)', () => {
+  // 1. Generator rejects a component whose required list references an ungenerated property
+  const componentWithGhostRequired = {
+    name: 'GhostRequiredWidget',
+    required: ['component', 'title', 'ghostProperty'],
+    fields: [
+      { name: 'title', required: true, schema: { type: 'string' } },
+    ],
+  };
+
+  assert.throws(
+    () => makeCatalogV1([componentWithGhostRequired]),
+    (err) => {
+      assert.match(
+        err.message,
+        /Required property 'ghostProperty' on component 'GhostRequiredWidget' is not defined/,
+      );
+      return true;
+    },
+  );
+
+  // 2. Structural validator flags error when comp.required references missing property
+  const catalogWithMissingProp = JSON.parse(JSON.stringify(catalog));
+  catalogWithMissingProp.components.FinanceMetricCard.required.push('nonExistentField');
+  const structuralCheck = validateCatalogStructuralRules(catalogWithMissingProp);
+  assert.equal(structuralCheck.valid, false);
+  assert.ok(
+    structuralCheck.errors.some(
+      (e) =>
+        e.includes("FinanceMetricCard") &&
+        e.includes("required property 'nonExistentField' does not exist in component properties"),
+    ),
+  );
+
+  // 3. Reference validator also flags the missing required property
+  const { commonTypes } = loadOfficialSchemas();
+  const refCheck = validateCatalogReferences(catalogWithMissingProp, commonTypes);
+  assert.equal(refCheck.valid, false);
+  assert.ok(
+    refCheck.errors.some(
+      (e) =>
+        e.includes("FinanceMetricCard") &&
+        e.includes("required property 'nonExistentField' does not exist in component properties"),
+    ),
+  );
+});
+
+test('contract hardening: every normalized input field is represented or produces a blocking diagnostic (Task 2 & 8)', () => {
+  // 1. Unsupported types produce blocking error when diagnostics array is not provided
+  assert.throws(
+    () =>
+      formatFieldPropertyV1(
+        { name: 'rawFunction', schema: { type: 'function' } },
+        'TestWidget',
+      ),
+    /Unsupported property type for 'TestWidget.rawFunction'/,
+  );
+
+  // 2. Diagnostics collection records code, severity: 'error', blocking: true
+  const diagnostics = [];
+  const res = formatFieldPropertyV1(
+    { name: 'renderCallback', schema: { type: 'function' } },
+    'TestWidget',
+    { diagnostics },
+  );
+  assert.equal(res, null);
+  assert.equal(diagnostics.length, 1);
+  assert.equal(diagnostics[0].code, 'UNSUPPORTED_PROPERTY_TYPE');
+  assert.equal(diagnostics[0].severity, 'error');
+  assert.equal(diagnostics[0].blocking, true);
+  assert.equal(diagnostics[0].component, 'TestWidget');
+  assert.equal(diagnostics[0].field, 'renderCallback');
+
+  // 3. A required field with unsupported type CANNOT be silently omitted by generator
+  const compWithUnsupportedRequired = {
+    name: 'BrokenRequiredComp',
+    fields: [
+      { name: 'label', required: true, schema: { type: 'string' } },
+      { name: 'badProp', required: true, schema: { type: 'object' } },
+    ],
+  };
+
+  const genDiags = [];
+  assert.throws(
+    () => makeCatalogV1([compWithUnsupportedRequired], { diagnostics: genDiags }),
+    /Required field 'BrokenRequiredComp.badProp' cannot be omitted from catalog output/,
+  );
+
+  // 4. Reserved property 'id' leaking into component definition is caught by structural validation
+  const catalogWithLeakedId = makeCatalogV1([
+    {
+      name: 'IdCollisionWidget',
+      fields: [{ name: 'id', schema: { type: 'string' } }],
+    },
+  ]);
+  const leakCheck = validateCatalogStructuralRules(catalogWithLeakedId);
+  assert.equal(leakCheck.valid, false);
+  assert.match(leakCheck.errors[0], /envelope property 'id'/);
+});
+
+test('type safety: preserve supported types, enums, unions, nullability, defaults, and descriptions accurately (Task 4)', () => {
+  // 1. Integer scalar maps to DynamicNumber
+  const intProp = formatFieldPropertyV1(
+    { name: 'count', schema: { type: 'integer' }, description: 'Item count', default: 0 },
+    'TestComp',
+  );
+  assert.equal(intProp.$ref, 'common_types.json#/$defs/DynamicNumber');
+  assert.equal(intProp.description, 'Item count');
+  assert.equal(intProp.default, 0);
+
+  // 2. Nullable number|string union
+  const nullableUnion = formatFieldPropertyV1(
+    {
+      name: 'metricVal',
+      schema: { type: ['number', 'string', 'null'] },
+      description: 'Nullable metric value',
+      default: null,
+    },
+    'TestComp',
+  );
+  assert.ok(nullableUnion.oneOf);
+  const unionTypes = nullableUnion.oneOf.map((t) => t.type ?? t.$ref);
+  assert.deepEqual(unionTypes, [
+    'number',
+    'string',
+    'null',
+    'common_types.json#/$defs/DataBinding',
+    'common_types.json#/$defs/FunctionCall',
+  ]);
+  assert.equal(nullableUnion.description, 'Nullable metric value');
+  assert.equal(nullableUnion.default, null);
+
+  // 3. Nullable string enum
+  const nullableEnum = formatFieldPropertyV1(
+    {
+      name: 'priority',
+      schema: { type: 'string', enum: ['high', 'low', null] },
+      description: 'Task priority',
+    },
+    'TestComp',
+  );
+  assert.ok(nullableEnum.oneOf);
+  assert.deepEqual(nullableEnum.oneOf[0], { type: 'string', enum: ['high', 'low'] });
+  assert.deepEqual(nullableEnum.oneOf[1], { type: 'null' });
+  assert.equal(nullableEnum.description, 'Task priority');
+
+  // 4. Rejection of empty enum
+  assert.throws(
+    () => formatFieldPropertyV1({ name: 'emptyEnum', schema: { type: 'string', enum: [] } }, 'TestComp'),
+    (err) => {
+      assert.match(err.message, /Empty enum definition/);
+      return true;
+    },
+  );
+
+  // 5. Rejection of non-string enum
+  assert.throws(
+    () => formatFieldPropertyV1({ name: 'numEnum', schema: { enum: [1, 2, 3] } }, 'TestComp'),
+    (err) => {
+      assert.match(err.message, /Unsupported non-string enum values/);
+      return true;
+    },
+  );
+
+  // 6. Source defaults are preserved accurately (boolean, number, string, null)
+  const boolProp = formatFieldPropertyV1(
+    { name: 'visible', schema: { type: 'boolean', default: false } },
+    'TestComp',
+  );
+  assert.equal(boolProp.default, false);
+
+  const strProp = formatFieldPropertyV1(
+    { name: 'title', schema: { type: 'string', default: 'Untitled' } },
+    'TestComp',
+  );
+  assert.equal(strProp.default, 'Untitled');
+});
+
+test('JavaScript considerations: untyped props, any, unknown must not fabricate types or defaults (Task 8 & JS note)', () => {
+  // 1. Untyped JS prop (empty schema) throws and produces explicit diagnostic
+  assert.throws(
+    () => formatFieldPropertyV1({ name: 'untypedProp', schema: {} }, 'JSComponent'),
+    (err) => {
+      assert.match(err.message, /Missing or unspecified source type/);
+      assert.match(err.message, /generator will not fabricate types/);
+      return true;
+    },
+  );
+
+  const diagUntyped = [];
+  const resUntyped = formatFieldPropertyV1(
+    { name: 'untypedProp', schema: {} },
+    'JSComponent',
+    { diagnostics: diagUntyped },
+  );
+  assert.equal(resUntyped, null);
+  assert.equal(diagUntyped[0].code, 'UNSPECIFIED_SOURCE_TYPE');
+  assert.equal(diagUntyped[0].severity, 'error');
+  assert.equal(diagUntyped[0].blocking, true);
+
+  // 2. type: 'any' throws and produces explicit diagnostic
+  assert.throws(
+    () => formatFieldPropertyV1({ name: 'anyProp', schema: { type: 'any' } }, 'JSComponent'),
+    (err) => {
+      assert.match(err.message, /Unconstrained source type 'any'/);
+      assert.match(err.message, /generator will not fabricate/);
+      return true;
+    },
+  );
+
+  // 3. type: 'unknown' throws and produces explicit diagnostic
+  assert.throws(
+    () => formatFieldPropertyV1({ name: 'unknownProp', schema: { type: 'unknown' } }, 'JSComponent'),
+    (err) => {
+      assert.match(err.message, /Unconstrained source type 'unknown'/);
+      return true;
+    },
+  );
+
+  // 4. Missing default does NOT fabricate a default
+  const noDefaultProp = formatFieldPropertyV1(
+    { name: 'noDef', schema: { type: 'string' } },
+    'JSComponent',
+  );
+  assert.equal('default' in noDefaultProp, false);
+
+  // 5. Defaults do NOT make a required property optional
+  const requiredWithDefault = {
+    name: 'JSWidget',
+    fields: [
+      { name: 'requiredWithDefault', required: true, schema: { type: 'string', default: 'hello' } },
+    ],
+  };
+  const requiredList = getRequiredProperties(requiredWithDefault);
+  assert.deepEqual(requiredList, ['component', 'requiredWithDefault']);
+});
+
+test('metadata configuration: customizable title, description, catalogId and neutral non-finance defaults (Task 6)', () => {
+  // 1. Custom title, description, catalogId are strictly respected
+  const customCatalog = makeCatalogV1(metadata, {
+    catalogId: 'https://acme.org/catalogs/design-system/2.0.0',
+    title: 'Acme Design System Catalog',
+    description: 'Enterprise UI components for Acme platform.',
+  });
+
+  assert.equal(customCatalog.catalogId, 'https://acme.org/catalogs/design-system/2.0.0');
+  assert.equal(customCatalog.$id, 'https://acme.org/catalogs/design-system/2.0.0');
+  assert.equal(customCatalog.title, 'Acme Design System Catalog');
+  assert.equal(customCatalog.description, 'Enterprise UI components for Acme platform.');
+
+  // 2. A non-finance export (e.g. React or generic) does NOT inherit finance metadata
+  const genericComponent = {
+    name: 'AlertBanner',
+    framework: 'react',
+    fields: [
+      { name: 'message', required: true, schema: { type: 'string' } },
+      { name: 'level', schema: { type: 'string', enum: ['info', 'warning', 'error'] } },
+    ],
+  };
+
+  const genericCatalog = makeCatalogV1([genericComponent], {
+    catalogId: 'https://example.com/catalogs/react/1.0.0',
+  });
+  assert.equal(genericCatalog.title, 'React A2UI Catalog');
+  assert.equal(genericCatalog.description, 'Standardized components exported from React Storybook.');
+  assert.equal(
+    genericCatalog.components.AlertBanner.description,
+    'AlertBanner component definition exported from react.',
+  );
+  assert.equal(/finance/i.test(JSON.stringify(genericCatalog)), false);
+
+  // 3. Project name option formats clean title
+  const namedCatalog = makeCatalogV1([genericComponent], { projectName: 'PortalApp' });
+  assert.equal(namedCatalog.title, 'PortalApp A2UI Catalog');
+});
+
+test('instruction generation: instructions reflect actually selected components and active functions (Task 7)', () => {
+  // 1. Export with only a Button only generates Button instructions
+  const buttonCatalog = makeCatalogV1([metadata.find((m) => m.name === 'MaterialButton')]);
+  assert.ok(buttonCatalog.instructions.includes('MaterialButton:'));
+  assert.equal(buttonCatalog.instructions.includes('FinanceMetricCard:'), false);
+  assert.equal(buttonCatalog.instructions.includes('MaterialCheckbox:'), false);
+  assert.equal(buttonCatalog.instructions.includes('Row and Column'), false);
+  assert.equal(buttonCatalog.instructions.includes('Functions:'), false);
+
+  // 2. Custom component instructions via options.componentInstructions are included
+  const customInstCatalog = makeCatalogV1(
+    [
+      {
+        name: 'CustomBanner',
+        fields: [{ name: 'text', schema: { type: 'string' } }],
+      },
+    ],
+    {
+      componentInstructions: {
+        CustomBanner: 'CustomBanner: Top-level notification banner displayed at page header.',
+      },
+    },
+  );
+  assert.ok(
+    customInstCatalog.instructions.includes(
+      'CustomBanner: Top-level notification banner displayed at page header.',
+    ),
+  );
+
+  // 3. Functions instruction is present when active catalog functions exist
+  const functionCatalog = makeCatalogV1(
+    [metadata.find((m) => m.name === 'MaterialButton')],
+    {
+      functions: {
+        fetchProfile: {
+          type: 'object',
+          properties: {
+            '@call': { properties: { const: { type: 'string' } }, required: ['const'] },
+          },
+          required: ['type', 'properties', 'required'],
+          returnType: 'object',
+        },
+      },
+    },
+  );
+  assert.ok(functionCatalog.instructions.includes('Functions: Active catalog functions are invoked using @call envelopes.'));
+  assert.ok(functionCatalog.$defs.anyFunction !== false);
+  assert.deepEqual(functionCatalog.$defs.anyFunction, {
+    oneOf: [{ $ref: '#/functions/fetchProfile' }],
+  });
+});
+
+test('cross-framework compatibility: normalized Angular and React metadata without duplicate parsers (Task 9)', () => {
+  const manifestPath = path.resolve(
+    path.dirname(fileURLToPath(import.meta.url)),
+    'fixtures/storybook-react-manifest.fixture.json',
+  );
+
+  // 1. Load official React manifest fixture
+  const normalizedReact = normalizeReactManifest(manifestPath);
+  assert.ok(normalizedReact.components.length > 0);
+
+  // 2. Extract Intro Button and normalize to makeCatalogV1 format
+  const introBtn = normalizedReact.components.find((c) => c.name === 'Button');
+  assert.ok(introBtn, 'Should find Intro Button in manifest fixture');
+  const reactCompMeta = toA2UIComponentMetadata(introBtn);
+
+  // 3. Generate catalog from normalized React component
+  const reactCatalog = makeCatalogV1([reactCompMeta], {
+    catalogId: 'https://example.com/catalogs/react-components/1.0.0',
+    title: 'React Button Catalog',
+  });
+
+  const validator = createCatalogValidator();
+  const reactValResult = validator(reactCatalog);
+  assert.equal(
+    reactValResult.valid,
+    true,
+    `React catalog failed meta-schema: ${JSON.stringify(reactValResult.errors)}`,
+  );
+
+  const instanceValidator = createComponentInstanceValidator(reactCatalog);
+  assert.equal(
+    instanceValidator({ component: 'Button', label: 'Click Me', primary: true }).valid,
+    true,
+  );
+  assert.equal(
+    instanceValidator({ component: 'Button', label: 'Submit', size: 'large' }).valid,
+    true,
+  );
+
+  // 4. Unified mixed catalog containing BOTH Angular and React normalized components
+  const angularMetricCard = metadata.find((m) => m.name === 'FinanceMetricCard');
+  const mixedCatalog = makeCatalogV1([angularMetricCard, reactCompMeta], {
+    catalogId: 'https://example.com/catalogs/unified-cross-framework/1.0.0',
+    title: 'Unified Cross-Framework Catalog',
+  });
+
+  assert.deepEqual(Object.keys(mixedCatalog.components).sort(), ['Button', 'FinanceMetricCard']);
+  assert.deepEqual(
+    mixedCatalog.$defs.anyComponent.oneOf.map((o) => o.$ref).sort(),
+    ['#/components/Button', '#/components/FinanceMetricCard'],
+  );
+
+  // 5. Unified catalog validates cleanly under official A2UI validator
+  const mixedValResult = validator(mixedCatalog);
+  assert.equal(
+    mixedValResult.valid,
+    true,
+    `Mixed catalog failed validation: ${JSON.stringify(mixedValResult.errors)}`,
+  );
+
+  // Instances of both frameworks validate against unified anyComponent discriminator
+  const mixedInstanceValidator = createComponentInstanceValidator(mixedCatalog);
+  assert.equal(
+    mixedInstanceValidator({ component: 'FinanceMetricCard', label: 'Rev', value: 1000 }).valid,
+    true,
+  );
+  assert.equal(
+    mixedInstanceValidator({ component: 'Button', label: 'Next' }).valid,
+    true,
+  );
+  assert.equal(
+    mixedInstanceValidator({ component: 'NonExistent', label: 'Bad' }).valid,
+    false,
+  );
+});
+
+test('diagnostic categorization: clearly distinguish missing source metadata from invalid A2UI schema output (Task 10)', () => {
+  const mixedIssues = [
+    { code: 'UNSUPPORTED_PROPERTY_TYPE', message: "Unsupported property type for 'MyWidget.complex'" },
+    { code: 'UNSPECIFIED_SOURCE_TYPE', message: "Missing or unspecified source type for 'JSComp.data'" },
+    { code: 'MISSING_DOCGEN_DATA', message: "Component entry 'header' contains neither docgen" },
+    { code: 'CALLBACK_PROP', message: "Property 'onClick' is a callback" },
+    { code: 'INCOMPLETE_TS_MEMBERSHIP', message: "react-docgen-typescript did not return component docs" },
+    "numeric story control does not narrow",
+    "Missing mandatory root '$defs'.",
+    "Root $id does not match catalogId.",
+    "Unresolved internal reference '#/components/Missing' at components.Button.",
+    "Adapter file not found at src/adapters/button.adapter.ts",
+    "Source dependency not found at src/components/button.ts",
+  ];
+
+  const categorized = categorizeValidationIssues(mixedIssues);
+
+  // 1. Source metadata deficiencies
+  assert.equal(categorized.sourceMetadataDeficiencies.length, 6);
+  assert.ok(
+    categorized.sourceMetadataDeficiencies.some((i) => i.code === 'UNSUPPORTED_PROPERTY_TYPE'),
+  );
+  assert.ok(
+    categorized.sourceMetadataDeficiencies.some((i) => i.code === 'UNSPECIFIED_SOURCE_TYPE'),
+  );
+  assert.ok(
+    categorized.sourceMetadataDeficiencies.some((i) => typeof i === 'string' && i.includes('numeric story control')),
+  );
+
+  // 2. Schema output violations
+  assert.equal(categorized.schemaOutputViolations.length, 3);
+  assert.ok(
+    categorized.schemaOutputViolations.some((i) => i.includes("Missing mandatory root '$defs'")),
+  );
+  assert.ok(
+    categorized.schemaOutputViolations.some((i) => i.includes('Unresolved internal reference')),
+  );
+
+  // 3. Runtime mapping issues
+  assert.equal(categorized.runtimeMappingIssues.length, 2);
+  assert.ok(
+    categorized.runtimeMappingIssues.some((i) => i.includes('Adapter file not found')),
+  );
+  assert.ok(
+    categorized.runtimeMappingIssues.some((i) => i.includes('Source dependency not found')),
+  );
 });

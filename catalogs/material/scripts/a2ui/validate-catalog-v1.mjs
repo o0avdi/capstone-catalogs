@@ -2,7 +2,7 @@ import Ajv2020 from 'ajv/dist/2020.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { generateCatalogV1, sortDeterministic } from './catalog-v1.mjs';
+import { generateCatalogV1, sortDeterministic, isValidCatalogId } from './catalog-v1.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -76,13 +76,50 @@ export function validateCatalogReferences(catalog, commonTypes) {
       }
     }
 
+    const seenOneOfRefs = new Set();
     for (const ref of oneOfRefs) {
       if (!ref || !ref.startsWith('#/components/')) {
         errors.push(`$defs.anyComponent.oneOf reference '${ref}' must target '#/components/<ComponentName>'.`);
       } else {
+        if (seenOneOfRefs.has(ref)) {
+          errors.push(`Duplicate component reference '${ref}' in $defs.anyComponent.oneOf.`);
+        }
+        seenOneOfRefs.add(ref);
         const targetName = ref.replace('#/components/', '');
         if (!catalog.components?.[targetName]) {
           errors.push(`$defs.anyComponent.oneOf references non-existent component '${targetName}'.`);
+        }
+      }
+    }
+  }
+
+  // 1b. Validate $defs.anyFunction alignment with functions
+  const anyFunction = catalog.$defs?.anyFunction;
+  const functionNames = Object.keys(catalog.functions ?? {});
+  if (functionNames.length > 0) {
+    if (!anyFunction || typeof anyFunction !== 'object' || !Array.isArray(anyFunction.oneOf)) {
+      errors.push("Catalog defines functions but '$defs.anyFunction' does not provide a valid 'oneOf' schema.");
+    } else {
+      const oneOfFnRefs = (anyFunction.oneOf ?? []).map((o) => o.$ref);
+      for (const fnName of functionNames) {
+        const expectedRef = `#/functions/${fnName}`;
+        if (!oneOfFnRefs.includes(expectedRef)) {
+          errors.push(`Function '${fnName}' defined in catalog.functions is missing from $defs.anyFunction.oneOf.`);
+        }
+      }
+      const seenFnRefs = new Set();
+      for (const ref of oneOfFnRefs) {
+        if (!ref || !ref.startsWith('#/functions/')) {
+          errors.push(`$defs.anyFunction.oneOf reference '${ref}' must target '#/functions/<FunctionName>'.`);
+        } else {
+          if (seenFnRefs.has(ref)) {
+            errors.push(`Duplicate function reference '${ref}' in $defs.anyFunction.oneOf.`);
+          }
+          seenFnRefs.add(ref);
+          const targetName = ref.replace('#/functions/', '');
+          if (!catalog.functions?.[targetName]) {
+            errors.push(`$defs.anyFunction.oneOf references non-existent function '${targetName}'.`);
+          }
         }
       }
     }
@@ -133,6 +170,15 @@ export function validateCatalogReferences(catalog, commonTypes) {
       }
       if (comp.properties?.component?.const !== name) {
         errors.push(`Component '${name}' properties.component.const must equal '${name}'.`);
+      }
+      if (Array.isArray(comp.required)) {
+        for (const reqProp of comp.required) {
+          if (!comp.properties || !(reqProp in comp.properties)) {
+            errors.push(
+              `Component '${name}' required property '${reqProp}' does not exist in component properties.`,
+            );
+          }
+        }
       }
     }
   }
@@ -237,6 +283,12 @@ export function validateCatalogStructuralRules(catalog) {
   }
 
   // 3. $id must match catalogId
+  if (!catalog.catalogId) {
+    errors.push("Missing 'catalogId' at catalog root.");
+  } else if (!isValidCatalogId(catalog.catalogId)) {
+    errors.push(`Invalid 'catalogId': must be a valid non-empty URI without fragments or whitespace (found: '${catalog.catalogId}').`);
+  }
+
   if (catalog.$id && catalog.catalogId && catalog.$id !== catalog.catalogId) {
     errors.push(`Root $id ('${catalog.$id}') does not match catalogId ('${catalog.catalogId}').`);
   }
@@ -266,6 +318,16 @@ export function validateCatalogStructuralRules(catalog) {
       }
       if (!Array.isArray(anyComp.oneOf) || !anyComp.oneOf.length) {
         errors.push(`Root '$defs.anyComponent' must declare non-empty 'oneOf' array of component references.`);
+      } else {
+        const seen = new Set();
+        for (const item of anyComp.oneOf) {
+          if (item?.$ref) {
+            if (seen.has(item.$ref)) {
+              errors.push(`Root '$defs.anyComponent.oneOf' contains duplicate component reference '${item.$ref}'.`);
+            }
+            seen.add(item.$ref);
+          }
+        }
       }
     }
   }
@@ -296,6 +358,17 @@ export function validateCatalogStructuralRules(catalog) {
         for (const item of comp.allOf) {
           if (item.$ref && item.$ref.includes('ComponentCommon')) {
             errors.push(`Component '${name}' uses legacy allOf wrapping ComponentCommon.`);
+          }
+        }
+      }
+
+      // Check required properties exist in properties
+      if (Array.isArray(comp.required)) {
+        for (const reqProp of comp.required) {
+          if (!comp.properties || !(reqProp in comp.properties)) {
+            errors.push(
+              `Component '${name}' required property '${reqProp}' does not exist in component properties.`,
+            );
           }
         }
       }
@@ -405,6 +478,55 @@ export function validateRuntimeMappings(components, registrations, projectRoot) 
 /**
  * Run a full automated validation suite on a catalog.
  */
+/**
+ * Categorize validation issues to distinguish source metadata deficiencies from schema output violations (Task 10).
+ */
+export function categorizeValidationIssues(issues = []) {
+  const result = {
+    sourceMetadataDeficiencies: [],
+    schemaOutputViolations: [],
+    runtimeMappingIssues: [],
+  };
+
+  for (const issue of issues) {
+    const text = typeof issue === 'string' ? issue : (issue.message ?? JSON.stringify(issue));
+    const code = typeof issue === 'object' && issue ? issue.code : null;
+
+    if (
+      code === 'UNSUPPORTED_PROPERTY_TYPE' ||
+      code === 'UNSPECIFIED_SOURCE_TYPE' ||
+      code === 'UNCONSTRAINED_SOURCE_TYPE' ||
+      code === 'EMPTY_ENUM' ||
+      code === 'UNSUPPORTED_ENUM_TYPE' ||
+      code === 'MISSING_DOCGEN_DATA' ||
+      code === 'INCOMPLETE_TS_MEMBERSHIP' ||
+      code === 'MISSING_META_COMPONENT' ||
+      code === 'CALLBACK_PROP' ||
+      code === 'PROJECTED_CONTENT_PROP' ||
+      code === 'COMPLEX_UNION_PROP' ||
+      /unsupported v1\.0 source schema/i.test(text) ||
+      /unsupported property type/i.test(text) ||
+      /unspecified source type/i.test(text) ||
+      /unconstrained source type/i.test(text) ||
+      /does not narrow/i.test(text) ||
+      /numeric story control/i.test(text)
+    ) {
+      result.sourceMetadataDeficiencies.push(issue);
+    } else if (
+      /adapter/i.test(text) ||
+      /fixtures/i.test(text) ||
+      /source dependency not found/i.test(text) ||
+      code === 'RUNTIME_MAPPING_ERROR'
+    ) {
+      result.runtimeMappingIssues.push(issue);
+    } else {
+      result.schemaOutputViolations.push(issue);
+    }
+  }
+
+  return result;
+}
+
 export function runValidationSuite(catalog, metadata, registrations, projectRoot, options = {}) {
   const { commonTypes } = loadOfficialSchemas(options.specDir);
 
@@ -683,6 +805,15 @@ export function runValidationSuite(catalog, metadata, registrations, projectRoot
     instancesPassed === testInstances.length &&
     runtimeResults.valid;
 
+  const allIssues = [
+    ...schemaResult.errors,
+    ...structuralResult.errors,
+    ...referenceResult.errors,
+    ...runtimeResults.issues,
+    ...runtimeResults.warnings,
+  ];
+  const categorizedIssues = categorizeValidationIssues(allIssues);
+
   return {
     schemaResult,
     structuralResult,
@@ -691,6 +822,7 @@ export function runValidationSuite(catalog, metadata, registrations, projectRoot
     instancesTotal: testInstances.length,
     instanceResults,
     runtimeResults,
+    categorizedIssues,
     allPassed,
   };
 }

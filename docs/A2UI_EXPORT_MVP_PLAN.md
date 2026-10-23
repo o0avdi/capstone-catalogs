@@ -30,6 +30,20 @@
   remain unchanged. Only the isolated fixture adds pinned `prop-types@15.8.1` and
   its own lockfile. No renderer work, other checkout changes, commit, push or merge.
 - Evidence and reproduction: `research-output/REACT_AND_JAVASCRIPT_CLI_RESULT.md`.
+### A2UI v1.0 Catalog Quality Gate and Completeness milestone — October 23, 2026
+
+- Hardened shared A2UI v1.0 catalog generation and validation against pinned official specifications (`catalog_definition.json` and `common_types.json`) on branch `feat/a2ui-quality-gate`.
+- [x] Reproduce the pre-change cross-framework baseline: 65/65 exporter tests passed.
+- [x] Every normalized input field is represented accurately or produces a blocking diagnostic (`UNSUPPORTED_PROPERTY_TYPE`, `UNSPECIFIED_SOURCE_TYPE`, `UNCONSTRAINED_SOURCE_TYPE`, `EMPTY_ENUM`, `UNSUPPORTED_ENUM_TYPE`).
+- [x] Enforce required-property existence invariant: every property in `comp.required` must actually exist in `comp.properties` in both generator and validators.
+- [x] Accurately preserve supported types: scalars (including integer -> `DynamicNumber`), homogeneous scalar unions (`number | string` and nullable `number | string | null`), string enums and nullable string enums, nullability (`type | null`), source defaults, and descriptions without type widening.
+- [x] Reject invalid catalog identities: validate `catalogId` and `$id` (must be valid canonical non-empty URI without fragments or whitespace) and detect duplicate component names in candidate inputs and oneOf references.
+- [x] Dynamic, neutral catalog metadata: prevent non-finance exports from inheriting "Finance and Material" titles or "finance widgets" descriptions, while preserving compatibility for FinanceMetricCard.
+- [x] Keep generated instructions context-specific: emit guidelines only for components actually selected; functions guidelines appear only when active catalog functions exist.
+- [x] JavaScript contract safety: reject untyped props (`schema: {}`), `any`, and `unknown` without fabricating types or defaults; ensure schema defaults do not make required properties optional.
+- [x] Cross-framework compatibility: prove that normalized Angular metadata (`metadata.mjs`) and React metadata (`react-manifest.mjs`) generate valid, compilable v1.0 catalogs and unified cross-framework catalogs without duplicating framework parsers.
+- [x] Diagnostic categorization: clearly distinguish source metadata deficiencies from schema output violations and runtime mapping issues (`categorizeValidationIssues`).
+- [x] Focused quality gate suite: 20/20 passed. Combined regression suite: 74/74 passed, zero skips, zero failures.
 
 ### Unregistered Angular catalog-only milestone — October 22, 2026
 

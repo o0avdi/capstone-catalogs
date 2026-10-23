@@ -6,6 +6,24 @@ import { extract } from './metadata.mjs';
 export const catalogV1Id = 'https://capstone.example/catalogs/finance-material/1.0.0';
 
 /**
+ * Validate catalog identifier according to A2UI v1.0 and JSON Schema Draft 2020-12 canonical URI rules.
+ * Requires a non-empty string, no whitespace, no URI fragments, and an authoritative URI scheme (e.g. https, http, urn).
+ */
+export function isValidCatalogId(id) {
+  if (typeof id !== 'string') return false;
+  const trimmed = id.trim();
+  if (!trimmed || trimmed !== id) return false;
+  if (/\s/.test(id)) return false;
+  if (id.includes('#')) return false;
+  try {
+    const url = new URL(id);
+    return ['https:', 'http:', 'urn:'].includes(url.protocol);
+  } catch {
+    return /^urn:[a-z0-9][a-z0-9-]{0,31}:[a-z0-9()+,\.:=@;$_!*'%/?-]+$/i.test(id);
+  }
+}
+
+/**
  * Reviewed registration policies for known components.
  * Configures explicit normative contracts, action descriptions, and component guidelines
  * without requiring hardcoded component-name branches in the core generator.
@@ -82,11 +100,14 @@ export function generateInstructions(componentNames = [], options = {}) {
     lines.push(`${step++}. ${inst}`);
   }
 
-  // Any other exported component with reviewed instructions
+  // Any other exported component with reviewed or configured instructions
   for (const name of componentNames) {
     if (!['FinanceMetricCard', 'MaterialButton', 'MaterialCheckbox', 'Row', 'Column'].includes(name)) {
-      if (reviewedPolicies[name]?.instructions) {
-        lines.push(`${step++}. ${reviewedPolicies[name].instructions}`);
+      const customInst =
+        reviewedPolicies[name]?.instructions ??
+        options.componentInstructions?.[name];
+      if (customInst) {
+        lines.push(`${step++}. ${customInst}`);
       }
     }
   }
@@ -121,9 +142,53 @@ export function formatFieldPropertyV1(field, componentName, options = {}) {
     return reviewedSchema;
   }
 
+  // Contract hardening: Reject missing, empty, or untyped schema (Task 2 & 10)
+  if (
+    !field ||
+    typeof field !== 'object' ||
+    !field.schema ||
+    typeof field.schema !== 'object' ||
+    (!field.schema.type &&
+      !field.schema.$ref &&
+      !field.schema.enum &&
+      !field.schema.anyOf &&
+      !field.schema.oneOf)
+  ) {
+    const errorMessage = `Unsupported property type for '${componentName}.${field?.name ?? 'unknown'}' (unspecified/unknown). Missing or unspecified source type; JavaScript/untyped properties require reviewed schema mappings; generator will not fabricate types.`;
+    if (options.diagnostics && Array.isArray(options.diagnostics)) {
+      options.diagnostics.push({
+        code: 'UNSPECIFIED_SOURCE_TYPE',
+        severity: 'error',
+        blocking: true,
+        component: componentName,
+        field: field?.name,
+        message: errorMessage,
+      });
+      return null;
+    }
+    throw new Error(errorMessage);
+  }
+
   const schema = { ...field.schema };
   const description = schema.description ?? field.description;
   const defaultValue = schema.default ?? field.default;
+
+  // Reject unconstrained source types (any, unknown)
+  if (schema.type === 'any' || schema.type === 'unknown') {
+    const errorMessage = `Unsupported property type for '${componentName}.${field.name}' (${JSON.stringify(schema.type)}). Unconstrained source type '${schema.type}'; JavaScript/untyped properties require reviewed schema mappings; generator will not fabricate types.`;
+    if (options.diagnostics && Array.isArray(options.diagnostics)) {
+      options.diagnostics.push({
+        code: 'UNCONSTRAINED_SOURCE_TYPE',
+        severity: 'error',
+        blocking: true,
+        component: componentName,
+        field: field.name,
+        message: errorMessage,
+      });
+      return null;
+    }
+    throw new Error(errorMessage);
+  }
 
   // 1. Union scalar types like number | string (e.g. value and change in FinanceMetricCard)
   const isNumberStringUnion =
@@ -132,19 +197,36 @@ export function formatFieldPropertyV1(field, componentName, options = {}) {
       schema.type.includes('string')) ||
     (Array.isArray(schema.anyOf) &&
       schema.anyOf.some((s) => s.type === 'number') &&
-      schema.anyOf.some((s) => s.type === 'string'));
+      schema.anyOf.some((s) => s.type === 'string')) ||
+    (Array.isArray(schema.oneOf) &&
+      schema.oneOf.some((s) => s.type === 'number') &&
+      schema.oneOf.some((s) => s.type === 'string'));
+
+  const isNullableUnion =
+    isNumberStringUnion &&
+    ((Array.isArray(schema.type) && schema.type.includes('null')) ||
+      schema.nullable === true ||
+      (Array.isArray(schema.anyOf) && schema.anyOf.some((s) => s.type === 'null')) ||
+      (Array.isArray(schema.oneOf) && schema.oneOf.some((s) => s.type === 'null')));
 
   if (isNumberStringUnion) {
+    const defaultUnionDesc =
+      componentName === 'FinanceMetricCard'
+        ? 'Dynamic metric value supporting literal numbers, strings, @path bindings, or function calls.'
+        : 'Dynamic value supporting literal numbers, strings, @path bindings, or function calls.';
+
+    const unionOneOf = [{ type: 'number' }, { type: 'string' }];
+    if (isNullableUnion) {
+      unionOneOf.push({ type: 'null' });
+    }
+    unionOneOf.push(
+      { $ref: 'common_types.json#/$defs/DataBinding' },
+      { $ref: 'common_types.json#/$defs/FunctionCall' },
+    );
+
     const prop = {
-      description:
-        description ??
-        `Dynamic metric value supporting literal numbers, strings, @path bindings, or function calls.`,
-      oneOf: [
-        { type: 'number' },
-        { type: 'string' },
-        { $ref: 'common_types.json#/$defs/DataBinding' },
-        { $ref: 'common_types.json#/$defs/FunctionCall' },
-      ],
+      description: description ?? defaultUnionDesc,
+      oneOf: unionOneOf,
     };
     if (defaultValue !== undefined) prop.default = defaultValue;
     return prop;
@@ -152,9 +234,59 @@ export function formatFieldPropertyV1(field, componentName, options = {}) {
 
   // 2. String enums with fixed allowed values (e.g. format, appearance, state)
   if (schema.enum && Array.isArray(schema.enum)) {
+    if (schema.enum.length === 0) {
+      const errorMessage = `Empty enum definition for '${componentName}.${field.name}'. An enum must specify at least one allowed value.`;
+      if (options.diagnostics && Array.isArray(options.diagnostics)) {
+        options.diagnostics.push({
+          code: 'EMPTY_ENUM',
+          severity: 'error',
+          blocking: true,
+          component: componentName,
+          field: field.name,
+          message: errorMessage,
+        });
+        return null;
+      }
+      throw new Error(errorMessage);
+    }
+
+    const hasNull = schema.enum.includes(null) || schema.nullable === true;
+    const stringValues = schema.enum.filter((v) => typeof v === 'string');
+    const hasUnsupportedValues = schema.enum.some(
+      (v) => typeof v !== 'string' && v !== null,
+    );
+
+    if (hasUnsupportedValues) {
+      const errorMessage = `Unsupported non-string enum values for '${componentName}.${field.name}'. A2UI v1.0 only supports string enums.`;
+      if (options.diagnostics && Array.isArray(options.diagnostics)) {
+        options.diagnostics.push({
+          code: 'UNSUPPORTED_ENUM_TYPE',
+          severity: 'error',
+          blocking: true,
+          component: componentName,
+          field: field.name,
+          message: errorMessage,
+        });
+        return null;
+      }
+      throw new Error(errorMessage);
+    }
+
+    if (hasNull) {
+      const prop = {
+        oneOf: [
+          { type: 'string', enum: [...stringValues].sort() },
+          { type: 'null' },
+        ],
+      };
+      if (description) prop.description = description;
+      if (defaultValue !== undefined) prop.default = defaultValue;
+      return prop;
+    }
+
     const prop = {
       type: 'string',
-      enum: [...schema.enum].sort(),
+      enum: [...stringValues].sort(),
     };
     if (description) prop.description = description;
     if (defaultValue !== undefined) prop.default = defaultValue;
@@ -164,7 +296,14 @@ export function formatFieldPropertyV1(field, componentName, options = {}) {
   // 3. Nullable supported scalars (backed by source evidence e.g. string | null, number | null, boolean | null)
   const isNullableString =
     (Array.isArray(schema.type) && schema.type.includes('string') && schema.type.includes('null')) ||
-    (schema.type === 'string' && schema.nullable === true);
+    (schema.type === 'string' && schema.nullable === true) ||
+    (Array.isArray(schema.anyOf) &&
+      schema.anyOf.some((s) => s.type === 'string') &&
+      schema.anyOf.some((s) => s.type === 'null')) ||
+    (Array.isArray(schema.oneOf) &&
+      schema.oneOf.some((s) => s.type === 'string') &&
+      schema.oneOf.some((s) => s.type === 'null'));
+
   if (isNullableString) {
     const prop = {
       oneOf: [
@@ -180,8 +319,17 @@ export function formatFieldPropertyV1(field, componentName, options = {}) {
   }
 
   const isNullableNumber =
-    (Array.isArray(schema.type) && schema.type.includes('number') && schema.type.includes('null')) ||
-    (schema.type === 'number' && schema.nullable === true);
+    (Array.isArray(schema.type) &&
+      (schema.type.includes('number') || schema.type.includes('integer')) &&
+      schema.type.includes('null')) ||
+    ((schema.type === 'number' || schema.type === 'integer') && schema.nullable === true) ||
+    (Array.isArray(schema.anyOf) &&
+      schema.anyOf.some((s) => s.type === 'number' || s.type === 'integer') &&
+      schema.anyOf.some((s) => s.type === 'null')) ||
+    (Array.isArray(schema.oneOf) &&
+      schema.oneOf.some((s) => s.type === 'number' || s.type === 'integer') &&
+      schema.oneOf.some((s) => s.type === 'null'));
+
   if (isNullableNumber) {
     const prop = {
       oneOf: [
@@ -198,7 +346,14 @@ export function formatFieldPropertyV1(field, componentName, options = {}) {
 
   const isNullableBoolean =
     (Array.isArray(schema.type) && schema.type.includes('boolean') && schema.type.includes('null')) ||
-    (schema.type === 'boolean' && schema.nullable === true);
+    (schema.type === 'boolean' && schema.nullable === true) ||
+    (Array.isArray(schema.anyOf) &&
+      schema.anyOf.some((s) => s.type === 'boolean') &&
+      schema.anyOf.some((s) => s.type === 'null')) ||
+    (Array.isArray(schema.oneOf) &&
+      schema.oneOf.some((s) => s.type === 'boolean') &&
+      schema.oneOf.some((s) => s.type === 'null'));
+
   if (isNullableBoolean) {
     const prop = {
       oneOf: [
@@ -234,7 +389,7 @@ export function formatFieldPropertyV1(field, componentName, options = {}) {
   }
 
   // 6. Numeric scalars -> common_types.json#/$defs/DynamicNumber
-  if (schema.type === 'number') {
+  if (schema.type === 'number' || schema.type === 'integer') {
     const prop = {
       $ref: 'common_types.json#/$defs/DynamicNumber',
     };
@@ -259,6 +414,9 @@ export function formatFieldPropertyV1(field, componentName, options = {}) {
 
   if (options.diagnostics && Array.isArray(options.diagnostics)) {
     options.diagnostics.push({
+      code: 'UNSUPPORTED_PROPERTY_TYPE',
+      severity: 'error',
+      blocking: true,
       component: componentName,
       field: field.name,
       message: errorMessage,
@@ -349,18 +507,49 @@ export function makeCatalogV1(components, options = {}) {
   }
 
   const catalogId = options.catalogId ?? catalogV1Id;
-  const title = options.title ?? 'Finance and Material A2UI Catalog';
-  const description =
-    options.description ??
-    'Standardized components exported from Angular Material and finance widgets.';
+  if (!isValidCatalogId(catalogId)) {
+    throw new Error(
+      `makeCatalogV1: Invalid catalogId '${catalogId}'. Must be a valid non-empty URI without fragments or whitespace.`,
+    );
+  }
+
+  const hasFinanceComponents = components.some((c) => c.name === 'FinanceMetricCard');
+  const allReact = components.every((c) => c.framework === 'react');
+
+  const defaultTitle = options.projectName
+    ? `${options.projectName} A2UI Catalog`
+    : hasFinanceComponents
+      ? 'Finance and Material A2UI Catalog'
+      : allReact
+        ? 'React A2UI Catalog'
+        : 'A2UI Component Catalog';
+
+  const defaultDescription = options.projectDescription
+    ? options.projectDescription
+    : hasFinanceComponents
+      ? 'Standardized components exported from Angular Material and finance widgets.'
+      : allReact
+        ? 'Standardized components exported from React Storybook.'
+        : 'Standardized A2UI v1.0 component catalog.';
+
+  const title = options.title ?? defaultTitle;
+  const description = options.description ?? defaultDescription;
 
   const componentSchemas = {};
   const componentNames = [];
+  const seenComponentNames = new Set();
 
   for (const c of components) {
     if (!c.name || typeof c.name !== 'string') {
       throw new Error(`makeCatalogV1: Component missing valid name.`);
     }
+
+    if (seenComponentNames.has(c.name)) {
+      throw new Error(
+        `makeCatalogV1: Duplicate component name '${c.name}' detected in catalog candidates.`,
+      );
+    }
+    seenComponentNames.add(c.name);
 
     if (c.name === 'Surface') {
       throw new Error(`makeCatalogV1: Component name 'Surface' is reserved by the A2UI specification.`);
@@ -379,9 +568,21 @@ export function makeCatalogV1(components, options = {}) {
 
     // Add fields
     for (const f of c.fields ?? []) {
+      if (!f || typeof f !== 'object' || !f.name || typeof f.name !== 'string') {
+        throw new Error(
+          `makeCatalogV1: Component '${c.name}' contains an unnamed or malformed field definition.`,
+        );
+      }
+
       const prop = formatFieldPropertyV1(f, c.name, options);
       if (prop !== null) {
         properties[f.name] = prop;
+      } else {
+        if (f.required === true) {
+          throw new Error(
+            `makeCatalogV1: Required field '${c.name}.${f.name}' cannot be omitted from catalog output despite unsupported type.`,
+          );
+        }
       }
     }
 
@@ -400,11 +601,34 @@ export function makeCatalogV1(components, options = {}) {
     // Determine required list
     const required = getRequiredProperties(c, options);
 
+    // CRITICAL: Ensure every required property actually exists in generated properties
+    for (const reqProp of required) {
+      if (!(reqProp in properties)) {
+        const errorMsg = `makeCatalogV1: Required property '${reqProp}' on component '${c.name}' is not defined in component properties.`;
+        if (options.diagnostics && Array.isArray(options.diagnostics)) {
+          options.diagnostics.push({
+            code: 'MISSING_REQUIRED_PROPERTY_DEFINITION',
+            severity: 'error',
+            blocking: true,
+            component: c.name,
+            property: reqProp,
+            message: errorMsg,
+          });
+        }
+        throw new Error(errorMsg);
+      }
+    }
+
+    const defaultCompDesc =
+      hasFinanceComponents && c.name === 'FinanceMetricCard'
+        ? `${c.name} component definition exported from Angular Material and finance widgets.`
+        : c.framework
+          ? `${c.name} component definition exported from ${c.framework}.`
+          : `${c.name} component definition.`;
+
     const schema = {
       type: 'object',
-      description:
-        c.description ??
-        `${c.name} component definition exported from Angular Material and finance widgets.`,
+      description: c.description ?? defaultCompDesc,
       properties,
       required,
       additionalProperties: false,
@@ -428,6 +652,7 @@ export function makeCatalogV1(components, options = {}) {
     });
 
   // Synthesize root $defs strictly containing ONLY anyComponent and anyFunction
+  const hasFunctions = Boolean(options.functions && Object.keys(options.functions).length > 0);
   const defs = {
     anyComponent: {
       oneOf: componentNames.sort().map((name) => ({
@@ -437,7 +662,15 @@ export function makeCatalogV1(components, options = {}) {
         propertyName: 'component',
       },
     },
-    anyFunction: false,
+    anyFunction: hasFunctions
+      ? {
+          oneOf: Object.keys(options.functions)
+            .sort()
+            .map((fnName) => ({
+              $ref: `#/functions/${fnName}`,
+            })),
+        }
+      : false,
   };
 
   const catalog = {
