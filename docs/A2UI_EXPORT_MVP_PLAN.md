@@ -1,5 +1,26 @@
 # Angular Storybook export MVP
 
+### Documentation integration - October 24, 2026
+
+- [x] Complete the cherry-pick of `ac85710` into `feat/a2ui-real-catalog-pilot`
+  by retaining both the reviewed-surface/pilot milestones and the external-QA
+  onboarding/fresh-clone audit. Earlier "uncommitted" notes below describe their
+  original milestone runs; the pilot and reviewed surfaces are committed in
+  `3005663`, and this cherry-pick integrates the onboarding documents with their
+  original commit message, "Prepare portable Storybook exporter sprint demo".
+- [x] Preserve all implementation, tests, reviewed examples and local research output.
+  Keep README CLI options including `--reviewed-surfaces`, directory preparation,
+  tracked example/QA links and React manifest compatibility guidance. Replace
+  fresh-clone links to local-only reports with tracked documentation.
+- [x] After continuation, run `npm.cmd run test:a2ui` from `catalogs/material`:
+  134/134 passed, zero failures/skips/cancellations (386.4 seconds). No test or
+  production changes were required. The original 112-test fresh-clone audit stays
+  historical evidence; this run does not claim a new install or renderer acceptance.
+- [x] Validate the incoming tracked example against the pinned official schemas;
+  confirm it is byte-identical to the incoming commit. Relative documentation
+  links and command input paths resolve to tracked files. Staged whitespace and
+  unresolved-file checks pass; local `research-output/` remains untracked.
+
 ### Explicit reviewed A2UI property surfaces - October 23, 2026
 
 - [x] Preserve `feat/a2ui-real-catalog-pilot` and existing uncommitted pilot;
@@ -70,6 +91,19 @@
   Isolated configurations/source copies leave normal Storybook and library sources intact.
 - No new component export is claimed. No dependency/lockfile, generator/validator,
   reference-fixture, renderer or other-checkout changes; work remains uncommitted.
+
+### Sprint demo release and onboarding audit — October 23, 2026
+
+- Resolved developer onboarding defects and verified external compatibility audit findings on `feat/a2ui-external-qa`.
+- [x] Reproduce the 112/112 baseline test suite without modifications to production exporter, generator, or validators.
+- [x] Fix fresh-clone Storybook index generation: pre-create destination directory to prevent Storybook CLI `ENOENT` failure.
+- [x] Fix broken links to untracked research files in root README; curate essential reports into tracked `docs/SPRINT_DEMO_RELEASE_AUDIT.md` and `docs/SPONSOR_DEMO_SCRIPT.md`.
+- [x] Add minimal tracked example catalog at `examples/catalog.json` (56 lines) generated from verified `MaterialCheckbox`, with reproduction and validation guide in `examples/README.md`.
+- [x] Document Storybook Index v5 and Components Manifest v0 specifications; React manifest generation requires Storybook >= 10.6.0 with `features.componentsManifest: true`. Document an upgrade path for older Storybooks (< 10.6.0) preserving the existing builder and avoiding broad project dependency upgrades.
+- [x] Accurately document real Chromatic Storybook audit results: original Button source safely blocked by unmapped `onClick` callback; scalar-only extraction proved docgen fidelity but does not constitute complete Button API export.
+- [x] Diagnose catalog ID limitation: URNs pass argument regex parsing but fail during Ajv relative reference resolution (`common_types.json` requires a hierarchical base URI with a path, throwing `TypeError: Invalid URL` in WHATWG URL). Documented requirement for absolute HTTP/HTTPS URIs.
+- [x] Provide a 5-minute sponsor demonstration script in `docs/SPONSOR_DEMO_SCRIPT.md` covering Angular export, React JSX export, mixed catalog output, and safe rejection.
+- Decisions: Keep production exporter, generator, and validators unchanged. Retain uncommitted status for review; no push, merge, dependency upgrades, or publication.
 
 ### Developer CLI release for October 30 - October 23, 2026
 

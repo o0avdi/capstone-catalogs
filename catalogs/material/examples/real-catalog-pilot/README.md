@@ -4,7 +4,9 @@
 Material Checkbox control. It is not a new support claim. The six new candidates
 (Material Input/Tooltip/Card; Shadcn Separator/Badge/Progress) remain unsupported
 because their complete source contracts need reviewed mappings. See the
-[results and three-minute demo](../../../../research-output/REAL_CATALOG_PILOT_RESULT.md).
+[recorded pilot results](../../../../docs/A2UI_EXPORT_MVP_PLAN.md) and the quick
+sponsor reproduction below. The optional local report is
+`research-output/REAL_CATALOG_PILOT_RESULT.md`; it is not included in fresh clones.
 
 Run from `catalogs/material`, using the existing Node 24 installation and lockfile.
 No API key, renderer, LLM or dependency upgrade is needed.
