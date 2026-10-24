@@ -20,6 +20,7 @@ Options:
   --angular-index <file> Official local Angular v5 index (relative to project)
   --react-index <file>   Separate local React v5 index (relative to project)
   --react-manifest <file> React Components Manifest v0 from the same build (v1.0)
+  --reviewed-surfaces <file> Explicit reviewed property subsets (v1.0 React/TS only)
   --static-discovery    Explicit reduced-confidence static fallback (no indexes)
   --components <names>  Comma-separated discovery ids or component names
   --protocol <version>  0.9 (compatibility default) or 1.0 (validated JSON only)
@@ -66,6 +67,10 @@ export function parseArguments(argv) {
     }
     else if (value === '--project') options.project = requiredValue(value, args.shift());
     else if (value === '--react-manifest') options.reactManifest = requiredValue(value, args.shift());
+    else if (value === '--reviewed-surfaces') {
+      if (options.reviewedSurfaces) throw new Error('--reviewed-surfaces may only be supplied once.');
+      options.reviewedSurfaces = requiredValue(value, args.shift());
+    }
     else if (value === '--protocol') {
       options.protocol = requiredValue(value, args.shift());
       if (!['0.9', '1.0'].includes(options.protocol)) throw new Error('Protocol must be 0.9 or 1.0.');
@@ -85,7 +90,7 @@ export function parseArguments(argv) {
       throw new Error('--catalog-only supports --outputs json only.');
     options.protocol = '1.0';
   }
-  if ((options.catalogOptions || options.diagnostics || options.detectArtifacts) && options.protocol !== '1.0')
+  if ((options.catalogOptions || options.diagnostics || options.detectArtifacts || options.reviewedSurfaces) && options.protocol !== '1.0')
     throw new Error('Catalog metadata, --diagnostics and --detect-artifacts require --catalog-only or --protocol 1.0.');
   if (options.detectArtifacts && options.staticDiscovery)
     throw new Error('--detect-artifacts cannot be combined with --static-discovery.');
@@ -267,6 +272,8 @@ export async function run(argv = process.argv.slice(2)) {
   }
   const projectRoot = resolveProjectRoot(options.project ?? process.cwd());
   options = resolveArtifacts(projectRoot, options);
+  if (options.reviewedSurfaces && !options.reactManifest)
+    throw new Error('--reviewed-surfaces requires --react-manifest and --react-index; scopes never replace official evidence.');
   if (options.reactManifest && options.protocol !== '1.0')
     throw new Error('--react-manifest requires --protocol 1.0 (catalog JSON only).');
   if (options.reactManifest && !options.indexes?.some((index) => index.framework === 'react'))
@@ -283,8 +290,10 @@ export async function run(argv = process.argv.slice(2)) {
       const result = readiness.find((item) => item.id === candidate.id);
       candidate.catalogReadiness = result ?? { ready: null, message: 'Source contract will be checked during export.' };
       candidate.outputSupport = { json: result?.ready ?? false, rendererZip: false };
-      candidate.status = result?.ready ? 'source-contract' : result ? 'needs-configuration' : 'unchecked';
-      candidate.reasons = [result?.ready ? 'Source contract passed v1.0 catalog validation; renderer is developer-owned.' : candidate.catalogReadiness.message];
+      candidate.status = result?.ready ? result.contractScope ?? 'source-contract' : result ? 'needs-configuration' : 'unchecked';
+      candidate.reasons = [result?.ready ? result.contractScope === 'reviewed-subset'
+        ? 'Explicit reviewed A2UI subset passed v1.0 validation; excluded source capabilities are unavailable. Renderer is developer-owned.'
+        : 'Source contract passed v1.0 catalog validation; renderer is developer-owned.' : candidate.catalogReadiness.message];
       if (result && !result.ready) discovery.diagnostics.push({ code: result.code, id: candidate.id, message: `${candidate.id}: ${result.message}` });
     }
     discovery.summary.portable = 0;
@@ -314,7 +323,7 @@ export async function run(argv = process.argv.slice(2)) {
     outputs = options.outputs ?? (options.protocol === '1.0' ? ['json'] : ['json', 'zip']);
   } else ({ candidates, outputs } = await interactive(discovery, output, options.protocol));
   const result = exportSelection({ projectRoot, candidates, outputs, output, protocol: options.protocol, discovery,
-    reactManifest: options.reactManifest, catalogOptions: options.catalogOptions,
+    reactManifest: options.reactManifest, reviewedSurfaces: options.reviewedSurfaces, catalogOptions: options.catalogOptions,
     catalogOnly: options.catalogOnly, diagnostics: options.diagnostics });
   for (const warning of new Set((result.warnings ?? []).map((item) => typeof item === 'string' ? item : `[${item.code}] ${item.message}`)))
     console.error(warning);

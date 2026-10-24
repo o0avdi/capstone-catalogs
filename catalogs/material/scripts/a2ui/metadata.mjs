@@ -81,9 +81,10 @@ export function typeSchema(type, checker, context) {
     `${context}: unsupported type ${checker.typeToString(type)}; add an explicit schema and runtime mapping.`,
   );
 }
-export function createMetadataProgram(files) {
+export function createMetadataProgram(files, compilerOptions = {}) {
   return ts.createProgram(files, {
     experimentalDecorators: true, strictNullChecks: true, target: ts.ScriptTarget.ES2022,
+    ...compilerOptions,
   });
 }
 

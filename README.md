@@ -47,8 +47,11 @@ For your own React Storybook, build with Components Manifest enabled and point
 `--project`, `--react-index` and `--react-manifest` at that project and its build.
 Use TypeScript props or documented PropTypes that your docgen engine exposes.
 Index v5 and inline Components Manifest v0 are supported. Callbacks, slots, object
-props, missing types and uncertain contracts fail clearly. Props omitted by docgen
-cannot be recovered from story args: review source documentation for completeness.
+props, missing types and uncertain contracts fail clearly. For TypeScript stories,
+the compiler also checks direct `meta.component` identity, prop coverage and
+requiredness against the manifest. Omitted inherited props block export; they are
+not reconstructed from story args. JavaScript still requires documented PropTypes
+and source review for metadata omissions.
 
 Combine frameworks with the same CLI:
 
@@ -108,3 +111,20 @@ The regression suite uses the built Angular index. See the
 [historical exporter/renderer guide](catalogs/material/A2UI_EXPORTER_README.md).
 The original Finance Metric Card, Material Button and Material Checkbox renderer
 path remains available; this release adds no renderer or agent.
+
+The [real catalog pilot](research-output/REAL_CATALOG_PILOT_RESULT.md) records
+Material Input/Tooltip/Card and Shadcn Separator/Badge/Progress compatibility,
+including inherited props omitted by official docgen. The small
+[reproducible example](catalogs/material/examples/real-catalog-pilot/README.md)
+includes direct source stories, captured official metadata and a validated
+existing Material Checkbox control catalog. The complete contracts of those six
+candidates remain unsupported.
+
+## Reviewed A2UI subsets
+
+An optional `--reviewed-surfaces <JSON>` can expose a deliberately limited,
+reviewed React/TypeScript property contract. Full-contract strictness remains the
+default. The actual existing Separator has an orientation-only standalone
+example with all optional omissions explicitly reviewed; no renderer is supplied.
+See the [review format and exact commands](catalogs/material/examples/reviewed-export-surfaces/README.md)
+and [validation results](research-output/REVIEWED_EXPORT_SURFACE_RESULT.md).

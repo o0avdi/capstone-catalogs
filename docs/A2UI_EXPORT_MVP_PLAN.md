@@ -1,5 +1,76 @@
 # Angular Storybook export MVP
 
+### Explicit reviewed A2UI property surfaces - October 23, 2026
+
+- [x] Preserve `feat/a2ui-real-catalog-pilot` and existing uncommitted pilot;
+  reproduce its baseline: 120/120 passed, zero failures/skips (274.3 seconds).
+- [x] Consult pinned official `catalog_definition.json` at specification commit
+  `059b8d34874f96c0395dbfe23e6cc8b41cdb0f87`. A component is a catalog-supported
+  JSON Schema interface, not a required mirror of every framework prop. Scoped
+  contracts are permitted; semantic safety still requires source/runtime review.
+- [x] Add explicit `--reviewed-surfaces <JSON>` for bounded React/TypeScript
+  surfaces, using existing extraction, `makeCatalogV1` and official validators.
+  Full-contract strictness remains the default; no automatic exclusions.
+- [x] Require exact identity, a nonempty exposed list, a reason for every omitted
+  source name, source/docgen/lockfile evidence fingerprint, and standalone review
+  with no behavioral dependencies. Reject required omissions, conflicting scalar
+  types/defaults/requiredness, fabricated actions, unsupported behavior and stale
+  evidence. Retain complete source membership and docgen-omission inventories.
+- [x] Verify actual unchanged Separator as an orientation-only standalone divider:
+  horizontal/vertical enum, optional, local default horizontal. Explicitly review
+  82 optional omissions; retain 75 official docgen omissions in audit evidence.
+  Existing presentation stories and library sources remain unchanged.
+- [x] Focused positive/negative tests: 14/14 passed (56.0 seconds), including
+  candidate-order-independent evidence fingerprints. Actual source
+  runtime test renders default/horizontal `hr` and vertical `div` with separator
+  semantics and original classes. No renderer implementation is added.
+- [x] Final combined regression: 134/134 passed, zero failures/skips/cancellations
+  (336.3 seconds), retaining all original 120 tests. Official read-back validates
+  both single-file Separator and combined four-component catalogs; each accepts
+  three Separator cases and rejects ten invalid cases. Existing Checkbox checks
+  accept two and reject four. Original three component schemas compare identical
+  to the pilot artifact. Bulk reviewed selection is 1/6; strict/wrapper exports
+  still fail with diagnostics only. `git diff --check` passes.
+- [x] Deliver UTF-8 one-file example, full reviewed omission/source sidecars,
+  exact CLI commands and `research-output/REVIEWED_EXPORT_SURFACE_RESULT.md`.
+- Decision: this intentionally supersedes the previous pilot's no-narrowing
+  decision **only for an explicitly reviewed A2UI subset**. It does not make the
+  full Separator API supported or repair its missing docgen metadata. Normal
+  wrapper stories, Badge and Progress remain unsupported; no arbitrary callbacks,
+  context/collection mappings, source/schema/dependency changes or runnable ZIP.
+- Documentation/reproduction: `catalogs/material/examples/reviewed-export-surfaces/README.md`
+  and `research-output/REVIEWED_EXPORT_SURFACE_RESULT.md`. Work remains uncommitted.
+
+### Real catalog compatibility pilot - October 23, 2026
+
+- Current product remains validated A2UI v1.0 catalog JSON; renderer/agent supplied by developer.
+- [x] Verify branch `feat/a2ui-real-catalog-pilot`, tracked `local-artifacts.mjs`, and
+  baseline 112/112 passing (281.7 seconds, zero failures/skips).
+- [x] Generate fresh official indexes: 50 Angular and 64 React candidates;
+  original `--all-ready` exports FinanceMetricCard, MaterialButton, MaterialCheckbox.
+- [x] Inspect Material Input/Tooltip/Card and Shadcn Separator/Badge/Progress source
+  contracts. Template args and ComponentDemo `state` never become library APIs.
+- [x] Build isolated direct-component stories plus unchanged Shadcn wrappers with
+  Components Manifest enabled. Original project TS membership returns no docs;
+  byte-identical staged sources and isolated tsconfig produce real inherited props.
+- [x] Identify Storybook's additional bulk inherited-prop filtering (even with
+  `propFilter: () => true`). Add TypeScript completeness/identity/requiredness audit
+  before existing React manifest conversion; do not synthesize omitted schemas.
+- [x] Add eight negative/source-audit regression tests: focused 8/8 passed
+  (44.5 seconds); full final suite 120/120 passed (347.4 seconds), zero failures/skips.
+- [x] Read-back validate the combined three-component catalog and curated Checkbox
+  catalog with pinned official validators/schema compilation; each accepts two
+  valid instances and rejects four invalid instances. `git diff --check` passes.
+- [x] Deliver portable official metadata/source-hash evidence, a small examples
+  harness/control catalog, and `research-output/REAL_CATALOG_PILOT_RESULT.md` with
+  the full readiness matrix, reproduction commands and three-minute sponsor demo.
+- Decision: none of the six complete contracts is safely scalar-convertible today.
+  Do not fabricate a new success by narrowing props, copying wrapper args or dropping
+  inherited callbacks/slots. Preserve existing three successful library mappings.
+  Isolated configurations/source copies leave normal Storybook and library sources intact.
+- No new component export is claimed. No dependency/lockfile, generator/validator,
+  reference-fixture, renderer or other-checkout changes; work remains uncommitted.
+
 ### Developer CLI release for October 30 - October 23, 2026
 
 - Current deliverable is one validated A2UI v1.0 `catalog.json`; developers bring

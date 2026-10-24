@@ -1,0 +1,24 @@
+{
+  "source": "Official Storybook 10.6 build of byte-identical catalog sources with isolated tsconfig and Components Manifest enabled.",
+  "transformations": [
+    "Only docgen.filePath made project-relative; React index and prop metadata unchanged.",
+    "Angular index filtered to the three investigated titles; retained entries unchanged."
+  ],
+  "originalManifestSha256": "39012c794ffdf97201177aa0f7891847d4211197c3a2f085e7743437545eb112",
+  "originalIndexSha256": "0143020b6ef061db4c7e858e6a92306f8fe542f98eb0466dc9011dcd5b3135e4",
+  "originalAngularIndexSha256": "be74f1d38d284e0c437f4845410c41313fd9f35e2bc2557dec8beee9a84d05cf",
+  "sourceFiles": [
+    {
+      "path": "src/shadcn/components/ui/badge.tsx",
+      "sha256": "7cd2829add2e4ad7022e4f70f4fb9c343a70f53715dc1316c7845bdd2eefa6f8"
+    },
+    {
+      "path": "src/shadcn/components/ui/progress.tsx",
+      "sha256": "6783f6ed982a4c2317570a0cd7e9723ce77cd3c8d7a01916ccf550908391d8f6"
+    },
+    {
+      "path": "src/shadcn/components/ui/separator.tsx",
+      "sha256": "475c07d8f5e670076ee22392f55acdc036758d8c989a08958271aba32aaddbe3"
+    }
+  ]
+}

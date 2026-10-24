@@ -1,5 +1,7 @@
 import path from 'node:path';
 import { readReactComponentsManifest, normalizeReactComponentManifest, toA2UIComponentMetadata } from './react-manifest.mjs';
+import { createReactSourceAudit } from './react-source-audit.mjs';
+import { readReviewedSurfaces } from './reviewed-surface.mjs';
 
 const normalizedPath = (value) => value.replaceAll('\\', '/').replace(/^\.\//, '');
 const record = (value) => value && typeof value === 'object' && !Array.isArray(value);
@@ -7,17 +9,22 @@ function fail(code, message, details = []) {
   throw Object.assign(new Error(message), { code, details });
 }
 
-// Consume official artifacts only. No CSF evaluation or additional source parser.
-export function createReactCatalogExtractor(root, manifestFile) {
+// Official artifacts supply schemas; the existing TypeScript compiler checks
+// source identity/completeness. Neither path evaluates CSF modules.
+export function createReactCatalogExtractor(root, manifestFile, { reviewedSurfaces } = {}) {
   if (!manifestFile) return () => fail('REACT_MANIFEST_REQUIRED',
     'React v1.0 export requires --react-manifest <manifests/components.json> from the same Storybook build as --react-index.');
   const manifest = readReactComponentsManifest(path.resolve(root, manifestFile));
+  const surfaces = readReviewedSurfaces(root, reviewedSurfaces);
   const entries = Object.entries(manifest.components);
   for (const [key, entry] of entries) {
     if (!record(entry) || entry.id !== key || typeof entry.path !== 'string' || !entry.path ||
         !Array.isArray(entry.stories) || entry.stories.some((story) => !record(story) || typeof story.id !== 'string'))
       fail('INVALID_REACT_MANIFEST_ENTRY', `Malformed React manifest entry '${key}': expected matching id, path and story IDs.`);
   }
+  for (const id of Object.keys(surfaces)) if (!entries.some(([, entry]) => `react:${normalizedPath(entry.path)}` === id))
+    fail('REVIEWED_SURFACE_IDENTITY', `Reviewed candidate '${id}' has no matching manifest CSF identity; stale or misspelled scopes are not ignored.`);
+  const auditSource = createReactSourceAudit(root, entries.map(([, entry]) => entry));
   return (candidate) => {
     if (candidate.framework !== 'react' || candidate.discovery?.mode !== 'storybook-index')
       fail('REACT_INDEX_REQUIRED', 'React export requires official React Storybook index discovery.');
@@ -25,6 +32,7 @@ export function createReactCatalogExtractor(root, manifestFile) {
     if (matches.length !== 1) fail('REACT_MANIFEST_IDENTITY',
       `${candidate.id}: expected one manifest component with this exact CSF path, found ${matches.length}. Rebuild both official artifacts together; names/titles are not identities.`);
     const [manifestId, entry] = matches[0];
+    const surface = surfaces[candidate.id];
     const indexedIds = candidate.discovery.stories.map((story) => story.id).sort();
     const manifestIds = entry.stories.map((story) => story.id).sort();
     if (JSON.stringify(indexedIds) !== JSON.stringify(manifestIds) ||
@@ -47,9 +55,14 @@ export function createReactCatalogExtractor(root, manifestFile) {
         message: `${prop.name}: requiredness is unavailable in docgen; it cannot be assumed optional. Add documented PropTypes/types and rebuild.`,
       });
     }
-    for (const prop of [...normalized.callbacks, ...Object.keys(normalized.content).map((name) => ({ name })), ...normalized.unsupportedProperties])
+    for (const prop of [...normalized.callbacks, ...Object.keys(normalized.content).map((name) => ({ name })), ...normalized.unsupportedProperties]
+      .filter((prop) => !surface || !Object.hasOwn(surface.omit, prop.name)))
       problems.push({ code: 'REACT_REVIEWED_MAPPING_REQUIRED', property: prop.name,
         message: `${prop.name}: ${prop.reason ?? 'Callback or projected content.'} An explicit reviewed A2UI mapping is required. This CLI currently exports scalar React contracts only; implement and test a lossless mapping before selecting this component.` });
+    let sourceEvidence;
+    if (docgen) problems.push(...auditSource(candidate, normalized, docgen, {
+      surface, ...(surface ? { onEvidence: (facts) => { sourceEvidence = facts; } } : {}),
+    }));
     if (problems.length) fail('REACT_SOURCE_CONTRACT_UNSUPPORTED',
       `${candidate.id}: ${problems.map((item) => item.message).join('\n')}`, problems);
     const indexedPaths = candidate.discovery.stories.map((story) => story.componentPath).filter(Boolean);
@@ -57,13 +70,25 @@ export function createReactCatalogExtractor(root, manifestFile) {
     if (indexedPaths.some((source) => path.resolve(root, source) !== path.resolve(root, normalized.source)))
       fail('REACT_SOURCE_IDENTITY_MISMATCH', `${candidate.id}: indexed componentPath disagrees with the manifest source file.`);
     const metadata = toA2UIComponentMetadata(normalized);
+    if (surface) {
+      metadata.fields = metadata.fields.filter((field) => surface.expose.includes(field.name));
+      metadata.required = metadata.fields.filter((field) => field.required).map((field) => field.name);
+      metadata.callbacks = [];
+      metadata.content = {};
+      metadata.description += ` Reviewed A2UI subset, not a complete source API: exposes only ${surface.expose.join(', ')}; ` +
+        `${Object.keys(surface.omit).length} optional source properties explicitly excluded. No actions, custom rendering or slots. ` +
+        `Standalone usage only, without inherited context or collection dependencies. ${surface.review.rationale} ` +
+        'The developer-owned renderer must validate this catalog, honor only binding forms admitted by its schemas, forward only exposed properties, and preserve source defaults.';
+    }
     return {
       ...metadata, story: candidate.storyPath, storyIds: indexedIds, candidateId: candidate.id,
       identity: { manifestId, source: normalized.source, exportName: normalized.exportName },
       manifestProvenance: manifest.provenance,
       rawProperties: normalized.rawProperties,
-      warnings: [...normalized.diagnostics, { code: 'REACT_METADATA_SCOPE',
-        message: 'Export covers properties exposed by Storybook docgen. Undeclared props omitted by docgen cannot be recovered from the index or story examples; review source documentation for completeness.' }],
+      ...(surface ? { reviewedSurface: { ...surface, sourceEvidence } } : {}),
+      warnings: [...normalized.diagnostics, ...(surface ? [{ code: 'REACT_REVIEWED_SUBSET',
+        message: `${candidate.id}: reviewed subset exposes ${surface.expose.join(', ')}; ${Object.keys(surface.omit).length} optional properties explicitly excluded. Standalone usage only; no renderer is supplied.` }] : [{ code: 'REACT_METADATA_SCOPE',
+        message: 'Export covers properties exposed by Storybook docgen. Undeclared props omitted by docgen cannot be recovered from the index or story examples; review source documentation for completeness.' }])],
     };
   };
 }

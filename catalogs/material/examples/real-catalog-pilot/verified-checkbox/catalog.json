@@ -1,0 +1,56 @@
+{
+  "$defs": {
+    "anyComponent": {
+      "discriminator": {
+        "propertyName": "component"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/components/MaterialCheckbox"
+        }
+      ]
+    },
+    "anyFunction": false
+  },
+  "$id": "https://example.org/catalogs/real-catalog-pilot/checkbox/1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "catalogId": "https://example.org/catalogs/real-catalog-pilot/checkbox/1",
+  "components": {
+    "MaterialCheckbox": {
+      "additionalProperties": false,
+      "description": "Material/Checkbox exported from declarative CSF and source types.",
+      "properties": {
+        "action": {
+          "$ref": "common_types.json#/$defs/Action",
+          "description": "Interaction handler dispatched when the checkbox state changes."
+        },
+        "checked": {
+          "$ref": "common_types.json#/$defs/DynamicBoolean",
+          "description": "Whether the checkbox is selected."
+        },
+        "component": {
+          "const": "MaterialCheckbox"
+        },
+        "disabled": {
+          "$ref": "common_types.json#/$defs/DynamicBoolean",
+          "description": "Whether user interaction is disabled."
+        },
+        "label": {
+          "$ref": "common_types.json#/$defs/DynamicString",
+          "description": "Story text placed inside the checkbox."
+        }
+      },
+      "required": [
+        "component",
+        "label",
+        "checked"
+      ],
+      "type": "object"
+    }
+  },
+  "description": "Existing reviewed Material Checkbox source contract; compatibility pilot control.",
+  "functions": {},
+  "instructions": "Use only the components and properties declared in this catalog. Follow each schema for field types, required properties and source defaults; Storybook args are examples. Reviewed event/content mappings apply only to components declaring those properties. The developer implements the renderer and agent. Storybook callbacks are never serialized. Bindings use the A2UI v1.0 @path form. No custom functions are supplied. This export contains catalog JSON only; no v1.0 renderer compatibility is claimed.",
+  "protocolVersion": "1.0",
+  "title": "Verified Material Checkbox"
+}

@@ -54,12 +54,12 @@ const instructions = 'Use only the components and properties declared in this ca
 
 // Used only for readiness discovery/bulk selection. Export re-reads source, so a
 // preflight result can never authorize stale contracts or bypass validation.
-export function assessV1Readiness(root, candidates, { reactManifest } = {}) {
+export function assessV1Readiness(root, candidates, { reactManifest, reviewedSurfaces } = {}) {
   const registrationsFile = path.join(root, 'a2ui/registrations.json');
   const registrations = fs.existsSync(registrationsFile) ? JSON.parse(fs.readFileSync(registrationsFile, 'utf8')) : [];
   const unregistered = candidates.filter((c) => c.framework === 'angular' && !c.registrationName);
   const extractAngular = unregistered.length ? createAngularCatalogExtractor(root, unregistered) : undefined;
-  const extractReact = candidates.some((c) => c.framework === 'react') ? createReactCatalogExtractor(root, reactManifest) : undefined;
+  const extractReact = candidates.some((c) => c.framework === 'react') ? createReactCatalogExtractor(root, reactManifest, { reviewedSurfaces }) : undefined;
   const results = candidates.map((candidate) => {
     try {
       const matches = registrations.filter((r) => normalize(r.story) === candidate.storyPath);
@@ -74,7 +74,9 @@ export function assessV1Readiness(root, candidates, { reactManifest } = {}) {
       }
       assertV1Convertible([component]);
       validateV1Export(makeCatalogV1([component], { instructions }));
-      return { id: candidate.id, ready: true, name: component.name };
+      return { id: candidate.id, ready: true, name: component.name,
+        ...(component.reviewedSurface ? { contractScope: 'reviewed-subset', exposed: component.reviewedSurface.expose,
+          omitted: Object.keys(component.reviewedSurface.omit) } : {}) };
     } catch (error) {
       return { id: candidate.id, ready: false, code: error.code ?? 'UNSUPPORTED_SOURCE_CONTRACT', message: error.message };
     }
@@ -89,7 +91,7 @@ export function assessV1Readiness(root, candidates, { reactManifest } = {}) {
   return results;
 }
 
-export function exportV1Selection({ projectRoot, candidates, outputs, output, discovery, reactManifest, catalogOptions = {}, catalogOnly = false, diagnostics: includeDiagnostics = false }) {
+export function exportV1Selection({ projectRoot, candidates, outputs, output, discovery, reactManifest, reviewedSurfaces, catalogOptions = {}, catalogOnly = false, diagnostics: includeDiagnostics = false }) {
   const sidecars = !catalogOnly || includeDiagnostics;
   if (!candidates?.length) throw new Error('Select at least one component.');
   if (!outputs?.length || outputs.some((value) => value !== 'json'))
@@ -131,7 +133,7 @@ export function exportV1Selection({ projectRoot, candidates, outputs, output, di
     const metadata = selectedRegistrations.length
       ? extract(root, selectedRegistrations, { v: 5, entries }, { catalogOnly: true }) : [];
     if (reactCandidates.length) {
-      const extractReact = createReactCatalogExtractor(root, reactManifest);
+      const extractReact = createReactCatalogExtractor(root, reactManifest, { reviewedSurfaces });
       for (const candidate of reactCandidates) {
         try { metadata.push(extractReact(candidate)); }
         catch (error) {
@@ -179,7 +181,8 @@ export function exportV1Selection({ projectRoot, candidates, outputs, output, di
           component.candidateId ? 'Angular compiler source inputs (catalog only); no registration or adapter' :
           'metadata.mjs source extractor and reviewed registration; story args are examples only',
         content: component.content ?? {}, events: component.events ?? {}, callbacks: component.callbacks,
-        ...(component.framework === 'react' ? { manifest: component.manifestProvenance, rawProperties: component.rawProperties } : {}),
+        ...(component.framework === 'react' ? { manifest: component.manifestProvenance, rawProperties: component.rawProperties,
+          ...(component.reviewedSurface ? { contractScope: 'reviewed-subset', reviewedSurface: component.reviewedSurface } : {}) } : {}),
       };
     });
     diagnostics.status = 'success';

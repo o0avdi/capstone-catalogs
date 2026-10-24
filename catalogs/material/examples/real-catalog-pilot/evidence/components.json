@@ -1,0 +1,541 @@
+{
+  "v": 0,
+  "components": {
+    "pilot-badge": {
+      "id": "pilot-badge",
+      "name": "Badge",
+      "path": "./examples/real-catalog-pilot/Badge.stories.tsx",
+      "jsDocTags": {},
+      "reactDocgenTypescript": {
+        "tags": {},
+        "filePath": "./src/shadcn/components/ui/badge.tsx",
+        "description": "",
+        "displayName": "Badge",
+        "methods": [],
+        "props": {
+          "variant": {
+            "defaultValue": {
+              "value": "default"
+            },
+            "description": "",
+            "name": "variant",
+            "declarations": [],
+            "required": false,
+            "type": {
+              "name": "\"link\" | \"default\" | \"secondary\" | \"destructive\" | \"outline\" | \"ghost\" | null"
+            }
+          },
+          "render": {
+            "defaultValue": null,
+            "description": "",
+            "name": "render",
+            "declarations": [
+              {
+                "fileName": "isolated/src/shadcn/components/ui/badge.tsx",
+                "name": "TypeLiteral"
+              }
+            ],
+            "required": false,
+            "type": {
+              "name": "((props: HTMLAttributes<HTMLElement>) => ReactNode)"
+            }
+          }
+        },
+        "exportName": "Badge"
+      },
+      "stories": [
+        {
+          "id": "pilot-badge--default",
+          "name": "Default",
+          "snippet": "const Default = () => <Badge variant=\"default\">Review</Badge>;"
+        }
+      ],
+      "import": "import { Badge } from 'material-catalog';"
+    },
+    "pilot-progress": {
+      "id": "pilot-progress",
+      "name": "Progress",
+      "path": "./examples/real-catalog-pilot/Progress.stories.tsx",
+      "jsDocTags": {},
+      "reactDocgenTypescript": {
+        "tags": {},
+        "filePath": "./src/shadcn/components/ui/progress.tsx",
+        "description": "",
+        "displayName": "Progress",
+        "methods": [],
+        "props": {
+          "isIndeterminate": {
+            "defaultValue": null,
+            "description": "Whether presentation is indeterminate when progress isn't known.",
+            "name": "isIndeterminate",
+            "parent": {
+              "fileName": "capstone-catalogs-codex/catalogs/material/node_modules/react-aria/dist/types/src/progress/useProgressBar.d.ts",
+              "name": "ProgressBarProps"
+            },
+            "declarations": [
+              {
+                "fileName": "capstone-catalogs-codex/catalogs/material/node_modules/react-aria/dist/types/src/progress/useProgressBar.d.ts",
+                "name": "ProgressBarProps"
+              }
+            ],
+            "required": false,
+            "type": {
+              "name": "boolean"
+            }
+          },
+          "value": {
+            "defaultValue": {
+              "value": "0"
+            },
+            "description": "The current value (controlled).",
+            "name": "value",
+            "parent": {
+              "fileName": "capstone-catalogs-codex/catalogs/material/node_modules/react-aria/dist/types/src/progress/useProgressBar.d.ts",
+              "name": "ProgressBarBaseProps"
+            },
+            "declarations": [
+              {
+                "fileName": "capstone-catalogs-codex/catalogs/material/node_modules/react-aria/dist/types/src/progress/useProgressBar.d.ts",
+                "name": "ProgressBarBaseProps"
+              }
+            ],
+            "required": false,
+            "type": {
+              "name": "number"
+            }
+          },
+          "minValue": {
+            "defaultValue": {
+              "value": "0"
+            },
+            "description": "The smallest value allowed for the input.",
+            "name": "minValue",
+            "parent": {
+              "fileName": "capstone-catalogs-codex/catalogs/material/node_modules/react-aria/dist/types/src/progress/useProgressBar.d.ts",
+              "name": "ProgressBarBaseProps"
+            },
+            "declarations": [
+              {
+                "fileName": "capstone-catalogs-codex/catalogs/material/node_modules/react-aria/dist/types/src/progress/useProgressBar.d.ts",
+                "name": "ProgressBarBaseProps"
+              }
+            ],
+            "required": false,
+            "type": {
+              "name": "number"
+            }
+          },
+          "maxValue": {
+            "defaultValue": {
+              "value": "100"
+            },
+            "description": "The largest value allowed for the input.",
+            "name": "maxValue",
+            "parent": {
+              "fileName": "capstone-catalogs-codex/catalogs/material/node_modules/react-aria/dist/types/src/progress/useProgressBar.d.ts",
+              "name": "ProgressBarBaseProps"
+            },
+            "declarations": [
+              {
+                "fileName": "capstone-catalogs-codex/catalogs/material/node_modules/react-aria/dist/types/src/progress/useProgressBar.d.ts",
+                "name": "ProgressBarBaseProps"
+              }
+            ],
+            "required": false,
+            "type": {
+              "name": "number"
+            }
+          },
+          "formatOptions": {
+            "defaultValue": {
+              "value": "{ style: 'percent' }"
+            },
+            "description": "The display format of the value label.",
+            "name": "formatOptions",
+            "parent": {
+              "fileName": "capstone-catalogs-codex/catalogs/material/node_modules/react-aria/dist/types/src/progress/useProgressBar.d.ts",
+              "name": "ProgressBarBaseProps"
+            },
+            "declarations": [
+              {
+                "fileName": "capstone-catalogs-codex/catalogs/material/node_modules/react-aria/dist/types/src/progress/useProgressBar.d.ts",
+                "name": "ProgressBarBaseProps"
+              }
+            ],
+            "required": false,
+            "type": {
+              "name": "NumberFormatOptions"
+            }
+          },
+          "valueLabel": {
+            "defaultValue": null,
+            "description": "The content to display as the value's label (e.g. 1 of 4).",
+            "name": "valueLabel",
+            "parent": {
+              "fileName": "capstone-catalogs-codex/catalogs/material/node_modules/react-aria/dist/types/src/progress/useProgressBar.d.ts",
+              "name": "ProgressBarBaseProps"
+            },
+            "declarations": [
+              {
+                "fileName": "capstone-catalogs-codex/catalogs/material/node_modules/react-aria/dist/types/src/progress/useProgressBar.d.ts",
+                "name": "ProgressBarBaseProps"
+              }
+            ],
+            "required": false,
+            "type": {
+              "name": "ReactNode"
+            }
+          },
+          "style": {
+            "defaultValue": null,
+            "description": "The inline [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) for the\nelement. A function may be provided to compute the style based on component state.",
+            "name": "style",
+            "parent": {
+              "fileName": "capstone-catalogs-codex/catalogs/material/node_modules/react-aria-components/dist/types/src/utils.d.ts",
+              "name": "StyleRenderProps"
+            },
+            "declarations": [
+              {
+                "fileName": "capstone-catalogs-codex/catalogs/material/node_modules/react-aria-components/dist/types/src/utils.d.ts",
+                "name": "StyleRenderProps"
+              }
+            ],
+            "required": false,
+            "type": {
+              "name": "StyleOrFunction<ProgressBarRenderProps>"
+            }
+          },
+          "render": {
+            "defaultValue": null,
+            "description": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n- You must render the expected element type (e.g. if `<button>` is expected, you cannot render an\n  `<a>`).\n- Only a single root DOM element can be rendered (no fragments).\n- You must pass through props and ref to the underlying DOM element, merging with your own prop\n  as appropriate.",
+            "name": "render",
+            "parent": {
+              "fileName": "capstone-catalogs-codex/catalogs/material/node_modules/react-aria-components/dist/types/src/utils.d.ts",
+              "name": "DOMRenderProps"
+            },
+            "declarations": [
+              {
+                "fileName": "capstone-catalogs-codex/catalogs/material/node_modules/react-aria-components/dist/types/src/utils.d.ts",
+                "name": "DOMRenderProps"
+              }
+            ],
+            "required": false,
+            "type": {
+              "name": "DOMRenderFunction<\"div\", ProgressBarRenderProps>"
+            }
+          },
+          "slot": {
+            "defaultValue": null,
+            "description": "A slot name for the component. Slots allow the component to receive props from a parent\ncomponent. An explicit `null` value indicates that the local props completely override all\nprops received from a parent.",
+            "name": "slot",
+            "parent": {
+              "fileName": "capstone-catalogs-codex/catalogs/material/node_modules/react-aria-components/dist/types/src/utils.d.ts",
+              "name": "SlotProps"
+            },
+            "declarations": [
+              {
+                "fileName": "capstone-catalogs-codex/catalogs/material/node_modules/react-aria-components/dist/types/src/utils.d.ts",
+                "name": "SlotProps"
+              }
+            ],
+            "required": false,
+            "type": {
+              "name": "string | null"
+            }
+          },
+          "className": {
+            "defaultValue": null,
+            "description": "",
+            "name": "className",
+            "declarations": [
+              {
+                "fileName": "isolated/src/shadcn/components/ui/progress.tsx",
+                "name": "TypeLiteral"
+              }
+            ],
+            "required": false,
+            "type": {
+              "name": "string"
+            }
+          }
+        },
+        "exportName": "Progress"
+      },
+      "stories": [
+        {
+          "id": "pilot-progress--default",
+          "name": "Default",
+          "snippet": "const Default = () => <Progress value={40} />;"
+        }
+      ],
+      "import": "import { Progress } from 'material-catalog';"
+    },
+    "pilot-separator": {
+      "id": "pilot-separator",
+      "name": "Separator",
+      "path": "./examples/real-catalog-pilot/Separator.stories.tsx",
+      "jsDocTags": {},
+      "reactDocgenTypescript": {
+        "tags": {},
+        "filePath": "./src/shadcn/components/ui/separator.tsx",
+        "description": "",
+        "displayName": "Separator",
+        "methods": [],
+        "props": {
+          "className": {
+            "defaultValue": {
+              "value": "'react-aria-Separator'"
+            },
+            "description": "The CSS [className](https://developer.mozilla.org/en-US/docs/Web/API/Element/className) for the\nelement.",
+            "name": "className",
+            "parent": {
+              "fileName": "capstone-catalogs-codex/catalogs/material/node_modules/react-aria-components/dist/types/src/Separator.d.ts",
+              "name": "SeparatorProps"
+            },
+            "declarations": [
+              {
+                "fileName": "capstone-catalogs-codex/catalogs/material/node_modules/react-aria-components/dist/types/src/Separator.d.ts",
+                "name": "SeparatorProps"
+              }
+            ],
+            "required": false,
+            "type": {
+              "name": "string"
+            }
+          },
+          "orientation": {
+            "defaultValue": {
+              "value": "horizontal"
+            },
+            "description": "The orientation of the separator.",
+            "name": "orientation",
+            "parent": {
+              "fileName": "capstone-catalogs-codex/catalogs/material/node_modules/react-aria/dist/types/src/separator/useSeparator.d.ts",
+              "name": "SeparatorProps"
+            },
+            "declarations": [
+              {
+                "fileName": "capstone-catalogs-codex/catalogs/material/node_modules/react-aria/dist/types/src/separator/useSeparator.d.ts",
+                "name": "SeparatorProps"
+              }
+            ],
+            "required": false,
+            "type": {
+              "name": "enum",
+              "raw": "Orientation",
+              "value": [
+                {
+                  "value": "\"horizontal\""
+                },
+                {
+                  "value": "\"vertical\""
+                }
+              ]
+            }
+          },
+          "elementType": {
+            "defaultValue": null,
+            "description": "The HTML element type that will be used to render the separator.",
+            "name": "elementType",
+            "parent": {
+              "fileName": "capstone-catalogs-codex/catalogs/material/node_modules/react-aria/dist/types/src/separator/useSeparator.d.ts",
+              "name": "SeparatorProps"
+            },
+            "declarations": [
+              {
+                "fileName": "capstone-catalogs-codex/catalogs/material/node_modules/react-aria/dist/types/src/separator/useSeparator.d.ts",
+                "name": "SeparatorProps"
+              }
+            ],
+            "required": false,
+            "type": {
+              "name": "string"
+            }
+          },
+          "style": {
+            "defaultValue": null,
+            "description": "The inline [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) for the\nelement.",
+            "name": "style",
+            "parent": {
+              "fileName": "capstone-catalogs-codex/catalogs/material/node_modules/react-aria-components/dist/types/src/utils.d.ts",
+              "name": "StyleProps"
+            },
+            "declarations": [
+              {
+                "fileName": "capstone-catalogs-codex/catalogs/material/node_modules/react-aria-components/dist/types/src/utils.d.ts",
+                "name": "StyleProps"
+              }
+            ],
+            "required": false,
+            "type": {
+              "name": "CSSProperties"
+            }
+          },
+          "slot": {
+            "defaultValue": null,
+            "description": "A slot name for the component. Slots allow the component to receive props from a parent\ncomponent. An explicit `null` value indicates that the local props completely override all\nprops received from a parent.",
+            "name": "slot",
+            "parent": {
+              "fileName": "capstone-catalogs-codex/catalogs/material/node_modules/react-aria-components/dist/types/src/utils.d.ts",
+              "name": "SlotProps"
+            },
+            "declarations": [
+              {
+                "fileName": "capstone-catalogs-codex/catalogs/material/node_modules/react-aria-components/dist/types/src/utils.d.ts",
+                "name": "SlotProps"
+              }
+            ],
+            "required": false,
+            "type": {
+              "name": "string | null"
+            }
+          },
+          "render": {
+            "defaultValue": null,
+            "description": "Overrides the default DOM element with a custom render function.\nThis allows rendering existing components with built-in styles and behaviors\nsuch as router links, animation libraries, and pre-styled components.\n\nRequirements:\n\n- You must render the expected element type (e.g. if `<button>` is expected, you cannot render an\n  `<a>`).\n- Only a single root DOM element can be rendered (no fragments).\n- You must pass through props and ref to the underlying DOM element, merging with your own prop\n  as appropriate.",
+            "name": "render",
+            "parent": {
+              "fileName": "capstone-catalogs-codex/catalogs/material/node_modules/react-aria-components/dist/types/src/utils.d.ts",
+              "name": "DOMRenderProps"
+            },
+            "declarations": [
+              {
+                "fileName": "capstone-catalogs-codex/catalogs/material/node_modules/react-aria-components/dist/types/src/utils.d.ts",
+                "name": "DOMRenderProps"
+              }
+            ],
+            "required": false,
+            "type": {
+              "name": "DOMRenderFunction<\"div\" | \"hr\", undefined>"
+            }
+          },
+          "ref": {
+            "defaultValue": null,
+            "description": "Allows getting a ref to the component instance.\nOnce the component unmounts, React will set `ref.current` to `null`\n(or call the ref with `null` if you passed a callback ref).\n@see {@link https://react.dev/learn/referencing-values-with-refs#refs-and-the-dom React Docs}",
+            "name": "ref",
+            "parent": {
+              "fileName": "capstone-catalogs-codex/catalogs/material/node_modules/@types/react/index.d.ts",
+              "name": "RefAttributes"
+            },
+            "declarations": [
+              {
+                "fileName": "capstone-catalogs-codex/catalogs/material/node_modules/@types/react/index.d.ts",
+                "name": "RefAttributes"
+              }
+            ],
+            "required": false,
+            "type": {
+              "name": "Ref<HTMLElement>"
+            }
+          },
+          "key": {
+            "defaultValue": null,
+            "description": "",
+            "name": "key",
+            "parent": {
+              "fileName": "capstone-catalogs-codex/catalogs/material/node_modules/@types/react/index.d.ts",
+              "name": "Attributes"
+            },
+            "declarations": [
+              {
+                "fileName": "capstone-catalogs-codex/catalogs/material/node_modules/@types/react/index.d.ts",
+                "name": "Attributes"
+              }
+            ],
+            "required": false,
+            "type": {
+              "name": "Key | null"
+            }
+          }
+        },
+        "exportName": "Separator"
+      },
+      "stories": [
+        {
+          "id": "pilot-separator--horizontal",
+          "name": "Horizontal",
+          "snippet": "const Horizontal = () => <Separator orientation=\"horizontal\" />;"
+        },
+        {
+          "id": "pilot-separator--vertical",
+          "name": "Vertical",
+          "snippet": "const Vertical = () => <Separator orientation=\"vertical\" />;"
+        }
+      ],
+      "import": "import { Separator } from 'material-catalog';"
+    },
+    "shadcn-badge": {
+      "id": "shadcn-badge",
+      "name": "Badge",
+      "path": "./src/stories/Shadcn/badge.stories.tsx",
+      "jsDocTags": {},
+      "error": {
+        "name": "No component found",
+        "message": "We could not detect the component from your story file. Specify meta.component.\n   9 | }\n  10 |\n> 11 | const meta = {\n     | ^\n  12 |   title: \"Shadcn/Badge\",\n  13 |   tags: [\"autodocs\"],\n  14 |   parameters: {\n\n./src/stories/Shadcn/badge.stories.tsx:\nimport type { Meta, StoryObj } from \"@storybook/react-vite\"\r\n\r\nimport { ComponentDemo } from \"./_shared/component-demos\"\r\n\r\ntype ComponentState = \"Basic\" | \"Variants\"\r\n\r\ntype ComponentStoryArgs = {\r\n  state: ComponentState\r\n}\r\n\r\nconst meta = {\r\n  title: \"Shadcn/Badge\",\r\n  tags: [\"autodocs\"],\r\n  parameters: {\r\n    layout: \"centered\",\r\n    docs: {\r\n      description: {\r\n        component: \"React Aria-based Badge examples and component states. Documentation: https://ui.shadcn.com/docs/components/base/badge\",\r\n      },\r\n    },\r\n  },\r\n  argTypes: {\r\n    state: {\r\n      control: { type: \"select\" },\r\n      options: [\"Basic\",\"Variants\"],\r\n      description: \"Choose the component state displayed in the preview.\",\r\n      table: {\r\n        category: \"Component\",\r\n      },\r\n    },\r\n  },\r\n  args: {\r\n    state: \"Basic\",\r\n  },\r\n  render: (args) => <ComponentDemo component=\"badge\" state={args.state} />,\r\n} satisfies Meta<ComponentStoryArgs>\r\n\r\nexport default meta\r\n\r\ntype Story = StoryObj<typeof meta>\r\n\r\nexport const Basic: Story = {\r\n  args: {\r\n    state: \"Basic\",\r\n  },\r\n}\r\n\r\nexport const Variants: Story = {\r\n  args: {\r\n    state: \"Variants\",\r\n  },\r\n}\r\n"
+      },
+      "stories": [
+        {
+          "id": "shadcn-badge--basic",
+          "name": "Basic",
+          "snippet": "const Basic = () => <ComponentDemo component=\"badge\" state=\"Basic\" />;"
+        },
+        {
+          "id": "shadcn-badge--variants",
+          "name": "Variants",
+          "snippet": "const Variants = () => <ComponentDemo component=\"badge\" state=\"Variants\" />;"
+        }
+      ],
+      "import": "import { ComponentDemo } from 'material-catalog';"
+    },
+    "shadcn-progress": {
+      "id": "shadcn-progress",
+      "name": "Progress",
+      "path": "./src/stories/Shadcn/progress.stories.tsx",
+      "jsDocTags": {},
+      "error": {
+        "name": "No component found",
+        "message": "We could not detect the component from your story file. Specify meta.component.\n   9 | }\n  10 |\n> 11 | const meta = {\n     | ^\n  12 |   title: \"Shadcn/Progress\",\n  13 |   tags: [\"autodocs\"],\n  14 |   parameters: {\n\n./src/stories/Shadcn/progress.stories.tsx:\nimport type { Meta, StoryObj } from \"@storybook/react-vite\"\r\n\r\nimport { ComponentDemo } from \"./_shared/component-demos\"\r\n\r\ntype ComponentState = \"Basic\" | \"Indeterminate\"\r\n\r\ntype ComponentStoryArgs = {\r\n  state: ComponentState\r\n}\r\n\r\nconst meta = {\r\n  title: \"Shadcn/Progress\",\r\n  tags: [\"autodocs\"],\r\n  parameters: {\r\n    layout: \"centered\",\r\n    docs: {\r\n      description: {\r\n        component: \"React Aria-based Progress examples and component states. Documentation: https://ui.shadcn.com/docs/components/base/progress\",\r\n      },\r\n    },\r\n  },\r\n  argTypes: {\r\n    state: {\r\n      control: { type: \"select\" },\r\n      options: [\"Basic\",\"Indeterminate\"],\r\n      description: \"Choose the component state displayed in the preview.\",\r\n      table: {\r\n        category: \"Component\",\r\n      },\r\n    },\r\n  },\r\n  args: {\r\n    state: \"Basic\",\r\n  },\r\n  render: (args) => <ComponentDemo component=\"progress\" state={args.state} />,\r\n} satisfies Meta<ComponentStoryArgs>\r\n\r\nexport default meta\r\n\r\ntype Story = StoryObj<typeof meta>\r\n\r\nexport const Basic: Story = {\r\n  args: {\r\n    state: \"Basic\",\r\n  },\r\n}\r\n\r\nexport const Indeterminate: Story = {\r\n  args: {\r\n    state: \"Indeterminate\",\r\n  },\r\n}\r\n"
+      },
+      "stories": [
+        {
+          "id": "shadcn-progress--basic",
+          "name": "Basic",
+          "snippet": "const Basic = () => <ComponentDemo component=\"progress\" state=\"Basic\" />;"
+        },
+        {
+          "id": "shadcn-progress--indeterminate",
+          "name": "Indeterminate",
+          "snippet": "const Indeterminate = () => <ComponentDemo component=\"progress\" state=\"Indeterminate\" />;"
+        }
+      ],
+      "import": "import { ComponentDemo } from 'material-catalog';"
+    },
+    "shadcn-separator": {
+      "id": "shadcn-separator",
+      "name": "Separator",
+      "path": "./src/stories/Shadcn/separator.stories.tsx",
+      "jsDocTags": {},
+      "error": {
+        "name": "No component found",
+        "message": "We could not detect the component from your story file. Specify meta.component.\n   9 | }\n  10 |\n> 11 | const meta = {\n     | ^\n  12 |   title: \"Shadcn/Separator\",\n  13 |   tags: [\"autodocs\"],\n  14 |   parameters: {\n\n./src/stories/Shadcn/separator.stories.tsx:\nimport type { Meta, StoryObj } from \"@storybook/react-vite\"\r\n\r\nimport { ComponentDemo } from \"./_shared/component-demos\"\r\n\r\ntype ComponentState = \"Horizontal\" | \"Vertical\"\r\n\r\ntype ComponentStoryArgs = {\r\n  state: ComponentState\r\n}\r\n\r\nconst meta = {\r\n  title: \"Shadcn/Separator\",\r\n  tags: [\"autodocs\"],\r\n  parameters: {\r\n    layout: \"centered\",\r\n    docs: {\r\n      description: {\r\n        component: \"React Aria-based Separator examples and component states. Documentation: https://ui.shadcn.com/docs/components/base/separator\",\r\n      },\r\n    },\r\n  },\r\n  argTypes: {\r\n    state: {\r\n      control: { type: \"select\" },\r\n      options: [\"Horizontal\",\"Vertical\"],\r\n      description: \"Choose the component state displayed in the preview.\",\r\n      table: {\r\n        category: \"Component\",\r\n      },\r\n    },\r\n  },\r\n  args: {\r\n    state: \"Horizontal\",\r\n  },\r\n  render: (args) => <ComponentDemo component=\"separator\" state={args.state} />,\r\n} satisfies Meta<ComponentStoryArgs>\r\n\r\nexport default meta\r\n\r\ntype Story = StoryObj<typeof meta>\r\n\r\nexport const Horizontal: Story = {\r\n  args: {\r\n    state: \"Horizontal\",\r\n  },\r\n}\r\n\r\nexport const Vertical: Story = {\r\n  args: {\r\n    state: \"Vertical\",\r\n  },\r\n}\r\n"
+      },
+      "stories": [
+        {
+          "id": "shadcn-separator--horizontal",
+          "name": "Horizontal",
+          "snippet": "const Horizontal = () => <ComponentDemo component=\"separator\" state=\"Horizontal\" />;"
+        },
+        {
+          "id": "shadcn-separator--vertical",
+          "name": "Vertical",
+          "snippet": "const Vertical = () => <ComponentDemo component=\"separator\" state=\"Vertical\" />;"
+        }
+      ],
+      "import": "import { ComponentDemo } from 'material-catalog';"
+    }
+  },
+  "meta": {
+    "docgen": "react-docgen-typescript",
+    "durationMs": 20449
+  }
+}
